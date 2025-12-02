@@ -39,16 +39,16 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-[#191970] mb-3">
             Capitalized
           </h1>
-          <p className="text-muted-foreground">Welcome back! Sign in to continue</p>
+          <p className="text-gray-600 text-base">Welcome back! Sign in to continue</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="identifier" className="text-sm font-medium">
@@ -94,7 +94,7 @@ export function LoginScreen() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg"
+              className="w-full h-12 rounded-xl bg-[#191970] hover:bg-[#0f0f45] text-white font-medium transition-colors"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? (
@@ -108,9 +108,9 @@ export function LoginScreen() {
             </Button>
 
             <div className="text-center pt-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <Link to="/auth/register" className="text-blue-600 hover:text-blue-700 font-medium">
+                <Link to="/auth/register" className="text-[#191970] hover:text-[#0f0f45] font-medium">
                   Create Account
                 </Link>
               </p>

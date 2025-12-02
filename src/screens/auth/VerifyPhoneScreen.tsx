@@ -58,22 +58,22 @@ export function VerifyPhoneScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#191970] mb-4">
             <CheckCircle className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold text-[#191970] mb-3">
             Verify Your Phone
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-gray-600 text-base">
             Enter the 6-digit code sent to<br />
-            <span className="font-semibold text-foreground">{phone}</span>
+            <span className="font-semibold text-gray-900">{phone}</span>
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="otp" className="text-sm font-medium">
@@ -99,7 +99,7 @@ export function VerifyPhoneScreen() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg"
+              className="w-full h-12 rounded-xl bg-[#191970] hover:bg-[#0f0f45] text-white font-medium transition-colors"
               disabled={verifyMutation.isPending}
             >
               {verifyMutation.isPending ? (
@@ -118,7 +118,7 @@ export function VerifyPhoneScreen() {
             <Button
               type="button"
               variant="ghost"
-              className="w-full h-12 rounded-xl hover:bg-slate-100"
+              className="w-full h-12 rounded-xl hover:bg-gray-100 text-gray-700"
               onClick={handleResend}
               disabled={resendMutation.isPending}
             >

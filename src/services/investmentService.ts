@@ -33,8 +33,18 @@ export const investmentApi = {
     return response.data
   },
 
+  getProductById: async (id: string): Promise<InvestmentProduct> => {
+    const response = await apiClient.get<InvestmentProduct>(`/investments/products/${id}`)
+    return response.data
+  },
+
   calculateProjection: async (slug: string, amount: number): Promise<any> => {
     const response = await apiClient.post<any>(`/investments/products/${slug}/projection`, { amount })
+    return response.data
+  },
+
+  invest: async (data: { product_id: string; amount: number; units: number }): Promise<any> => {
+    const response = await apiClient.post<any>('/investments/', data)
     return response.data
   },
 

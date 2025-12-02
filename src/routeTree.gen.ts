@@ -19,6 +19,7 @@ import { Route as AppSubscriptionRouteImport } from './routes/app/subscription'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppPortfolioRouteImport } from './routes/app/portfolio'
 import { Route as AppInvestmentsRouteImport } from './routes/app/investments'
+import { Route as AppInvestmentsProductIdRouteImport } from './routes/app/investments/$productId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -70,43 +71,51 @@ const AppInvestmentsRoute = AppInvestmentsRouteImport.update({
   path: '/investments',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInvestmentsProductIdRoute = AppInvestmentsProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => AppInvestmentsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
-  '/app/investments': typeof AppInvestmentsRoute
+  '/app/investments': typeof AppInvestmentsRouteWithChildren
   '/app/portfolio': typeof AppPortfolioRoute
   '/app/profile': typeof AppProfileRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/investments/$productId': typeof AppInvestmentsProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
-  '/app/investments': typeof AppInvestmentsRoute
+  '/app/investments': typeof AppInvestmentsRouteWithChildren
   '/app/portfolio': typeof AppPortfolioRoute
   '/app/profile': typeof AppProfileRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/investments/$productId': typeof AppInvestmentsProductIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
-  '/app/investments': typeof AppInvestmentsRoute
+  '/app/investments': typeof AppInvestmentsRouteWithChildren
   '/app/portfolio': typeof AppPortfolioRoute
   '/app/profile': typeof AppProfileRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/investments/$productId': typeof AppInvestmentsProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
+    | '/app/investments/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
+    | '/app/investments/$productId'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify'
+    | '/app/investments/$productId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -225,18 +237,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInvestmentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/investments/$productId': {
+      id: '/app/investments/$productId'
+      path: '/$productId'
+      fullPath: '/app/investments/$productId'
+      preLoaderRoute: typeof AppInvestmentsProductIdRouteImport
+      parentRoute: typeof AppInvestmentsRoute
+    }
   }
 }
 
+interface AppInvestmentsRouteChildren {
+  AppInvestmentsProductIdRoute: typeof AppInvestmentsProductIdRoute
+}
+
+const AppInvestmentsRouteChildren: AppInvestmentsRouteChildren = {
+  AppInvestmentsProductIdRoute: AppInvestmentsProductIdRoute,
+}
+
+const AppInvestmentsRouteWithChildren = AppInvestmentsRoute._addFileChildren(
+  AppInvestmentsRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppInvestmentsRoute: typeof AppInvestmentsRoute
+  AppInvestmentsRoute: typeof AppInvestmentsRouteWithChildren
   AppPortfolioRoute: typeof AppPortfolioRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppInvestmentsRoute: AppInvestmentsRoute,
+  AppInvestmentsRoute: AppInvestmentsRouteWithChildren,
   AppPortfolioRoute: AppPortfolioRoute,
   AppProfileRoute: AppProfileRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,

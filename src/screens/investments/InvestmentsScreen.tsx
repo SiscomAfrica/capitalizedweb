@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { investmentApi } from '@/services/investmentService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,26 +35,26 @@ export function InvestmentsScreen() {
   const products = productsData?.products || []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
               Investment Opportunities
             </h1>
-            <p className="text-muted-foreground">Explore and invest in various products</p>
+            <p className="text-gray-600 text-sm">Explore and invest in various products</p>
           </div>
         </div>
 
         {categories && categories.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">CATEGORIES</h3>
+            <h3 className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide">Categories</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((category: any) => (
                 <Badge 
                   key={category.id} 
                   variant="outline" 
-                  className="cursor-pointer hover:bg-blue-100 hover:border-blue-300 transition-colors px-4 py-2 rounded-full"
+                  className="cursor-pointer hover:bg-[#191970] hover:text-white hover:border-[#191970] transition-all px-4 py-2 rounded-full border-gray-300"
                 >
                   {category.name}
                 </Badge>
@@ -64,33 +65,33 @@ export function InvestmentsScreen() {
 
         {products.length > 0 ? (
           <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {products.map((product: any) => (
-                <Card key={product.id} className="overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-0 shadow-lg bg-white rounded-2xl">
-                  <CardHeader className="pb-3 bg-gradient-to-br from-blue-50 to-purple-50">
+                <Card key={product.id} className="overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-200 bg-white rounded-2xl">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-xl font-bold">{product.name}</CardTitle>
+                      <CardTitle className="text-lg font-bold text-gray-900">{product.name}</CardTitle>
                       <Badge 
                         variant={product.status === 'active' ? 'default' : 'secondary'}
-                        className="rounded-full"
+                        className="rounded-full bg-[#191970] text-white"
                       >
                         {product.status}
                       </Badge>
                     </div>
-                    <CardDescription className="line-clamp-2 text-sm">
+                    <CardDescription className="line-clamp-2 text-sm text-gray-600">
                       {product.description || 'No description available'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4">
                     <div className="space-y-3">
-                      <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="bg-gray-50 rounded-xl p-3">
                         <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">Price per unit</span>
-                          <span className="font-bold text-lg">${product.price_per_unit?.toLocaleString()}</span>
+                          <span className="text-gray-600">Price per unit</span>
+                          <span className="font-bold text-lg text-gray-900">${product.price_per_unit?.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Min. Investment</span>
-                          <span className="font-semibold">${product.minimum_investment?.toLocaleString()}</span>
+                          <span className="text-gray-600">Min. Investment</span>
+                          <span className="font-semibold text-gray-900">${product.minimum_investment?.toLocaleString()}</span>
                         </div>
                       </div>
 
@@ -106,15 +107,23 @@ export function InvestmentsScreen() {
                       </div>
 
                       {product.investment_type && (
-                        <Badge variant="secondary" className="text-xs px-3 py-1 rounded-full">
+                        <Badge variant="secondary" className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-700">
                           {product.investment_type}
                         </Badge>
                       )}
                     </div>
                     
-                    <Button className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg">
-                      View Details
-                    </Button>
+                    <Link 
+                      to="/app/investments/$productId" 
+                      params={{ productId: product.id }}
+                      className="block"
+                    >
+                      <Button 
+                        className="w-full h-11 rounded-xl bg-[#191970] hover:bg-[#0f0f45] text-white font-medium transition-colors"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
@@ -122,15 +131,15 @@ export function InvestmentsScreen() {
 
             {productsData && productsData.total > products.length && (
               <div className="flex justify-center pt-4">
-                <p className="text-sm text-muted-foreground bg-white rounded-full px-6 py-2 shadow">
+                <p className="text-sm text-gray-600 bg-white rounded-full px-6 py-2 shadow-sm border border-gray-200">
                   Showing {products.length} of {productsData.total} products
                 </p>
               </div>
             )}
           </>
         ) : (
-          <div className="text-center py-20 bg-white rounded-2xl shadow">
-            <p className="text-muted-foreground text-lg">No investment opportunities available</p>
+          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
+            <p className="text-gray-600 text-base">No investment opportunities available</p>
           </div>
         )}
       </div>
