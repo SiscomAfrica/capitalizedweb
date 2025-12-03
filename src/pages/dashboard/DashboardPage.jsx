@@ -144,7 +144,7 @@ const DashboardPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-secondary-900">
-                Welcome back, {user?.firstName || 'User'}!
+                Welcome back, {user?.full_name?.split(' ')[0] || user?.firstName || 'User'}!
               </h1>
               <p className="text-secondary-600 mt-1">
                 Here's an overview of your investment journey
@@ -152,23 +152,25 @@ const DashboardPage = () => {
             </div>
             
             {/* KYC Status Badge */}
-            {user?.kycStatus && (
+            {user?.kyc_status && (
               <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                user.kycStatus === 'approved' 
+                user.kyc_status === 'approved' 
                   ? 'bg-success-100 text-success-700'
-                  : user.kycStatus === 'pending'
+                  : user.kyc_status === 'pending'
                   ? 'bg-warning-100 text-warning-700'
                   : 'bg-danger-100 text-danger-700'
               }`}>
-                {user.kycStatus === 'approved' ? (
+                {user.kyc_status === 'approved' ? (
                   <CheckCircle className="h-4 w-4" />
                 ) : (
                   <AlertCircle className="h-4 w-4" />
                 )}
-                KYC {user.kycStatus}
+                KYC {user.kyc_status}
               </div>
             )}
           </div>
+
+
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

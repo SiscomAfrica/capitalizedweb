@@ -7,11 +7,18 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import VerifyPhonePage from './pages/auth/VerifyPhonePage';
 
+// Home Page
+import HomePage from './pages/HomePage';
+
 // Dashboard Pages
 import DashboardPage from './pages/dashboard/DashboardPage';
 
 // Profile Pages
 import ProfilePage from './pages/profile/ProfilePage';
+
+// Onboarding Pages
+import ProfileCompletionPage from './pages/onboarding/ProfileCompletionPage';
+import KYCOnboardingPage from './pages/onboarding/KYCOnboardingPage';
 
 // Investment Pages
 import ProductsPage from './pages/investments/ProductsPage';
@@ -27,6 +34,7 @@ import MySubscriptionPage from './pages/subscriptions/MySubscriptionPage';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import OnboardingGuard from './components/auth/OnboardingGuard';
 
 // Page transition animation wrapper
 const PageTransition = ({ children }) => (
@@ -45,10 +53,12 @@ const PageTransition = ({ children }) => (
 
 // Wrapper for protected routes with transitions
 const ProtectedPageTransition = ({ children, requireKYC = false }) => (
-  <ProtectedRoute requireKYC={requireKYC}>
-    <PageTransition>
-      {children}
-    </PageTransition>
+  <ProtectedRoute>
+    <OnboardingGuard requireKYC={requireKYC}>
+      <PageTransition>
+        {children}
+      </PageTransition>
+    </OnboardingGuard>
   </ProtectedRoute>
 );
 
@@ -60,10 +70,14 @@ const PublicPageTransition = ({ children }) => (
 );
 
 export const router = createBrowserRouter([
-  // Root redirect to dashboard for authenticated users, login for unauthenticated
+  // Homepage (Public)
   {
     path: '/',
-    element: <Navigate to="/dashboard" replace />
+    element: (
+      <PublicPageTransition>
+        <HomePage />
+      </PublicPageTransition>
+    )
   },
 
   // Authentication Routes (Public)
@@ -110,6 +124,38 @@ export const router = createBrowserRouter([
         <ProfilePage />
       </ProtectedPageTransition>
     )
+  },
+
+  // Onboarding Routes (Protected but allow incomplete onboarding)
+  {
+    path: '/onboarding',
+    children: [
+      {
+        path: 'profile',
+        element: (
+          <ProtectedRoute>
+            <PageTransition>
+              <ProfileCompletionPage />
+            </PageTransition>
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: 'kyc',
+        element: (
+          <ProtectedRoute>
+            <PageTransition>
+              <KYCOnboardingPage />
+            </PageTransition>
+          </ProtectedRoute>
+        )
+      },
+      // Redirect /onboarding to /onboarding/profile
+      {
+        path: '',
+        element: <Navigate to="profile" replace />
+      }
+    ]
   },
 
   // Investment Routes (Protected)

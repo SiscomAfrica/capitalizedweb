@@ -77,7 +77,7 @@ const Header = ({ onMenuToggle }) => {
               className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 transition-colors"
             >
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SA</span>
+                <span className="text-white font-bold text-sm">C</span>
               </div>
               <span className="font-bold text-xl hidden sm:block">Capitalized</span>
             </Link>

@@ -19,18 +19,67 @@ import LoadingSpinner from '../common/LoadingSpinner';
 
 const KYCUpload = ({ onSuccess }) => {
   const { updateUser } = useAuth();
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef(null);
+  const [documents, setDocuments] = useState({
+    identity: null,      // Government ID (front)
+    identityBack: null,  // Government ID (back) - optional
+    proofOfAddress: null // Proof of address document
+  });
+  const [uploading, setUploading] = useState({
+    identity: false,
+    identityBack: false,
+    proofOfAddress: false
+  });
+  const [uploadProgress, setUploadProgress] = useState({
+    identity: 0,
+    identityBack: 0,
+    proofOfAddress: 0
+  });
+  const [errors, setErrors] = useState({
+    identity: null,
+    identityBack: null,
+    proofOfAddress: null
+  });
+  const [success, setSuccess] = useState({
+    identity: false,
+    identityBack: false,
+    proofOfAddress: false
+  });
+  const [dragActive, setDragActive] = useState({
+    identity: false,
+    identityBack: false,
+    proofOfAddress: false
+  });
+  
+  // File input refs for each document type
+  const identityInputRef = useRef(null);
+  const identityBackInputRef = useRef(null);
+  const proofOfAddressInputRef = useRef(null);
 
   // Accepted file types
   const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
-  const MAX_FILES = 5;
+
+  // Document type configurations
+  const DOCUMENT_TYPES = {
+    identity: {
+      title: 'Government ID (Front)',
+      description: 'Front side of your National ID, Passport, or Driver\'s License',
+      required: false,
+      ref: identityInputRef
+    },
+    identityBack: {
+      title: 'Government ID (Back)',
+      description: 'Back side of your ID (if applicable)',
+      required: false,
+      ref: identityBackInputRef
+    },
+    proofOfAddress: {
+      title: 'Proof of Address',
+      description: 'Utility bill, bank statement, or rental agreement (not older than 3 months)',
+      required: false,
+      ref: proofOfAddressInputRef
+    }
+  };
 
   // Validate file
   const validateFile = (file) => {
@@ -73,95 +122,103 @@ const KYCUpload = ({ onSuccess }) => {
     return File;
   };
 
-  // Handle file selection
-  const handleFileSelect = useCallback((files) => {
-    const fileArray = Array.from(files);
-    const validFiles = [];
-    const fileErrors = [];
+  // Handle file selection for specific document type
+  const handleFileSelect = useCallback((file, documentType) => {
+    if (!file) return;
 
-    // Check total number of files
-    if (selectedFiles.length + fileArray.length > MAX_FILES) {
-      setError(`Maximum ${MAX_FILES} files allowed. Please remove some files first.`);
+    const validationErrors = validateFile(file);
+    
+    if (validationErrors.length > 0) {
+      setErrors(prev => ({
+        ...prev,
+        [documentType]: `${DOCUMENT_TYPES[documentType].title}: ${validationErrors.join(' ')}`
+      }));
       return;
     }
 
-    fileArray.forEach((file) => {
-      const errors = validateFile(file);
-      
-      if (errors.length === 0) {
-        // Check for duplicates
-        const isDuplicate = selectedFiles.some(
-          existingFile => existingFile.name === file.name && existingFile.size === file.size
-        );
-        
-        if (!isDuplicate) {
-          validFiles.push({
-            file,
-            id: Math.random().toString(36).substr(2, 9),
-            preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
-          });
-        } else {
-          fileErrors.push(`File "${file.name}" is already selected.`);
-        }
-      } else {
-        fileErrors.push(`${file.name}: ${errors.join(' ')}`);
-      }
-    });
-
-    if (validFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...validFiles]);
-      setError(null);
+    // Clean up previous file preview if exists
+    const previousFile = documents[documentType];
+    if (previousFile?.preview) {
+      URL.revokeObjectURL(previousFile.preview);
     }
 
-    if (fileErrors.length > 0) {
-      setError(fileErrors.join('\n'));
-    }
-  }, [selectedFiles, validateFile]);
+    // Create new file object
+    const fileData = {
+      file,
+      id: Math.random().toString(36).substring(2, 11),
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      type: documentType
+    };
 
-  // Handle drag events
-  const handleDrag = useCallback((e) => {
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: fileData
+    }));
+    
+    // Clear error for this document type
+    setErrors(prev => ({
+      ...prev,
+      [documentType]: null
+    }));
+
+    // Clear success state when new file is selected
+    setSuccess(prev => ({
+      ...prev,
+      [documentType]: false
+    }));
+  }, [documents]);
+
+  // Handle drag events for specific document type
+  const handleDrag = useCallback((e, documentType) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
+      setDragActive(prev => ({ ...prev, [documentType]: true }));
     } else if (e.type === 'dragleave') {
-      setDragActive(false);
+      setDragActive(prev => ({ ...prev, [documentType]: false }));
     }
   }, []);
 
-  // Handle drop
-  const handleDrop = useCallback((e) => {
+  // Handle drop for specific document type
+  const handleDrop = useCallback((e, documentType) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
+    setDragActive(prev => ({ ...prev, [documentType]: false }));
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files);
+      handleFileSelect(e.dataTransfer.files[0], documentType);
     }
   }, [handleFileSelect]);
 
-  // Handle file input change
-  const handleFileInputChange = (e) => {
+  // Handle file input change for specific document type
+  const handleFileInputChange = (e, documentType) => {
     if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files);
+      handleFileSelect(e.target.files[0], documentType);
     }
   };
 
-  // Remove file
-  const removeFile = (fileId) => {
-    setSelectedFiles(prev => {
-      const updatedFiles = prev.filter(f => f.id !== fileId);
-      
-      // Revoke object URL to prevent memory leaks
-      const fileToRemove = prev.find(f => f.id === fileId);
-      if (fileToRemove?.preview) {
-        URL.revokeObjectURL(fileToRemove.preview);
-      }
-      
-      return updatedFiles;
-    });
+  // Remove file for specific document type
+  const removeFile = (documentType) => {
+    const fileToRemove = documents[documentType];
+    if (fileToRemove?.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
     
-    setError(null);
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: null
+    }));
+    
+    // Clear error and success for this document type
+    setErrors(prev => ({
+      ...prev,
+      [documentType]: null
+    }));
+    
+    setSuccess(prev => ({
+      ...prev,
+      [documentType]: false
+    }));
   };
 
   // Preview file
@@ -178,90 +235,85 @@ const KYCUpload = ({ onSuccess }) => {
     }
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (selectedFiles.length === 0) {
-      setError('Please select at least one document to upload.');
+  // Handle individual document upload
+  const handleDocumentUpload = async (documentType) => {
+    const document = documents[documentType];
+    
+    if (!document) {
+      setErrors(prev => ({
+        ...prev,
+        [documentType]: 'Please select a file to upload.'
+      }));
       return;
     }
 
-    setUploading(true);
-    setUploadProgress(0);
-    setError(null);
-    setSuccess(false);
+    setUploading(prev => ({ ...prev, [documentType]: true }));
+    setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
+    setErrors(prev => ({ ...prev, [documentType]: null }));
+    setSuccess(prev => ({ ...prev, [documentType]: false }));
 
     try {
-      // Prepare files for upload
-      const filesToUpload = selectedFiles.map(f => f.file);
-
       // Simulate progress (since we don't have real progress from the API)
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 10;
-        });
+        setUploadProgress(prev => ({
+          ...prev,
+          [documentType]: Math.min(prev[documentType] + Math.random() * 15, 90)
+        }));
       }, 200);
 
-      // Upload files
-      const response = await authClient.submitKYC(filesToUpload);
+      // Upload single file
+      const response = await authClient.submitKYC([document.file]);
 
       // Clear progress interval
       clearInterval(progressInterval);
-      setUploadProgress(100);
+      setUploadProgress(prev => ({ ...prev, [documentType]: 100 }));
 
       // Update user context with new KYC status
       updateUser({ kycStatus: 'pending' });
 
-      // Show success
-      setSuccess(true);
+      // Show success for this document
+      setSuccess(prev => ({ ...prev, [documentType]: true }));
 
-      // Clean up file previews
-      selectedFiles.forEach(fileData => {
-        if (fileData.preview) {
-          URL.revokeObjectURL(fileData.preview);
-        }
-      });
-
-      // Call success callback after a delay
-      setTimeout(() => {
-        onSuccess?.(response);
-      }, 2000);
+      // Call success callback
+      onSuccess?.(response);
 
     } catch (err) {
-      console.error('KYC upload failed:', err);
+      console.error(`${documentType} upload failed:`, err);
       
       // Handle different types of errors
+      let errorMessage = 'Upload failed. Please try again.';
+      
       if (err.response?.status === 400) {
-        setError(err.response.data?.message || 'Invalid files. Please check your documents and try again.');
+        errorMessage = err.response.data?.message || 'Invalid file. Please check your document and try again.';
       } else if (err.response?.status === 401) {
-        setError('Your session has expired. Please log in again.');
+        errorMessage = 'Your session has expired. Please log in again.';
       } else if (err.response?.status === 413) {
-        setError('Files too large. Please reduce file sizes and try again.');
-      } else {
-        setError(err.message || 'Upload failed. Please try again.');
+        errorMessage = 'File too large. Please reduce file size and try again.';
+      } else if (err.message) {
+        errorMessage = err.message;
       }
       
-      setUploadProgress(0);
+      setErrors(prev => ({
+        ...prev,
+        [documentType]: errorMessage
+      }));
+      
+      setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
     } finally {
-      setUploading(false);
+      setUploading(prev => ({ ...prev, [documentType]: false }));
     }
   };
 
   // Clean up on unmount
   React.useEffect(() => {
     return () => {
-      selectedFiles.forEach(fileData => {
-        if (fileData.preview) {
-          URL.revokeObjectURL(fileData.preview);
+      Object.values(documents).forEach(doc => {
+        if (doc?.preview) {
+          URL.revokeObjectURL(doc.preview);
         }
       });
     };
-  }, [selectedFiles]);
+  }, [documents]);
 
   return (
     <motion.div
@@ -271,8 +323,8 @@ const KYCUpload = ({ onSuccess }) => {
       transition={{ duration: 0.3 }}
       className="w-full max-w-2xl mx-auto"
     >
-      {/* Success Message */}
-      {success && (
+      {/* Global Success Message */}
+      {Object.values(success).some(s => s) && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -280,10 +332,10 @@ const KYCUpload = ({ onSuccess }) => {
         >
           <CheckCircle className="w-12 h-12 text-success-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-success-800 mb-2">
-            Documents Uploaded Successfully!
+            Document(s) Uploaded Successfully!
           </h3>
           <p className="text-success-600">
-            Your identity documents have been submitted for review. 
+            Your documents have been submitted for review. 
             You'll receive an email notification once the verification is complete.
           </p>
           <p className="text-sm text-success-500 mt-2">
@@ -292,179 +344,213 @@ const KYCUpload = ({ onSuccess }) => {
         </motion.div>
       )}
 
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4">
-          <ErrorMessage message={error} />
-        </div>
-      )}
-
       {/* Instructions */}
       <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
         <h3 className="text-sm font-semibold text-primary-800 mb-2">
-          Required Documents
+          Document Upload Guidelines
         </h3>
         <ul className="text-sm text-primary-700 space-y-1">
-          <li>• Government-issued ID (National ID, Passport, or Driver's License)</li>
+          <li>• Upload any documents you have available</li>
           <li>• Clear, readable photos or scans</li>
           <li>• File formats: PDF, JPG, PNG</li>
           <li>• Maximum file size: 5MB per file</li>
-          <li>• Maximum {MAX_FILES} files total</li>
+          <li>• Documents must be valid and not expired</li>
         </ul>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* File Drop Zone */}
-        <div
-          className={`
-            relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200
-            ${dragActive 
-              ? 'border-primary-400 bg-primary-50' 
-              : 'border-secondary-300 hover:border-secondary-400'
-            }
-            ${uploading ? 'pointer-events-none opacity-50' : ''}
-          `}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleFileInputChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            disabled={uploading}
-          />
+      <div className="space-y-8">
+        {/* Document Upload Sections */}
+        {Object.entries(DOCUMENT_TYPES).map(([documentType, config]) => {
+          const currentFile = documents[documentType];
+          const isActive = dragActive[documentType];
+          const isUploading = uploading[documentType];
+          const progress = uploadProgress[documentType];
+          const error = errors[documentType];
+          const isSuccess = success[documentType];
           
-          <Upload className="w-12 h-12 text-secondary-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-secondary-900 mb-2">
-            Drop files here or click to browse
-          </h3>
-          <p className="text-secondary-600 mb-4">
-            Upload your identity documents (PDF, JPG, PNG)
-          </p>
-          
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            Choose Files
-          </Button>
-        </div>
-
-        {/* Selected Files */}
-        <AnimatePresence>
-          {selectedFiles.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3"
-            >
-              <h4 className="text-sm font-medium text-secondary-900">
-                Selected Files ({selectedFiles.length}/{MAX_FILES})
-              </h4>
-              
-              {selectedFiles.map((fileData) => {
-                const FileIcon = getFileIcon(fileData.file);
+          return (
+            <div key={documentType} className="border border-secondary-200 rounded-lg p-6 space-y-4">
+              {/* Document Type Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <h4 className="text-sm font-semibold text-secondary-900">
+                    {config.title}
+                  </h4>
+                  <span className="text-xs text-secondary-500 font-medium">Optional</span>
+                </div>
                 
-                return (
-                  <motion.div
-                    key={fileData.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    className="flex items-center p-3 bg-secondary-50 rounded-lg border"
-                  >
-                    <FileIcon className="w-8 h-8 text-secondary-600 mr-3 flex-shrink-0" />
+                {isSuccess && (
+                  <div className="flex items-center text-success-600">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    <span className="text-xs font-medium">Uploaded</span>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-xs text-secondary-600">
+                {config.description}
+              </p>
+
+              {/* Error Message for this document */}
+              {error && (
+                <div className="mb-3">
+                  <ErrorMessage message={error} />
+                </div>
+              )}
+
+              {/* Upload Area */}
+              <div
+                className={`
+                  relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
+                  ${isActive 
+                    ? 'border-primary-400 bg-primary-50' 
+                    : currentFile 
+                      ? isSuccess 
+                        ? 'border-success-300 bg-success-50'
+                        : 'border-secondary-300 bg-secondary-50'
+                      : 'border-secondary-300 hover:border-secondary-400'
+                  }
+                  ${isUploading ? 'pointer-events-none opacity-50' : ''}
+                `}
+                onDragEnter={(e) => handleDrag(e, documentType)}
+                onDragLeave={(e) => handleDrag(e, documentType)}
+                onDragOver={(e) => handleDrag(e, documentType)}
+                onDrop={(e) => handleDrop(e, documentType)}
+              >
+                <input
+                  ref={config.ref}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileInputChange(e, documentType)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isUploading}
+                />
+                
+                {currentFile ? (
+                  // File Selected State
+                  <div className="space-y-3">
+                    <CheckCircle className={`w-8 h-8 mx-auto ${isSuccess ? 'text-success-600' : 'text-secondary-600'}`} />
+                    <div>
+                      <p className={`text-sm font-medium ${isSuccess ? 'text-success-800' : 'text-secondary-800'}`}>
+                        {currentFile.file.name}
+                      </p>
+                      <p className={`text-xs ${isSuccess ? 'text-success-600' : 'text-secondary-600'}`}>
+                        {formatFileSize(currentFile.file.size)}
+                      </p>
+                    </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-secondary-900 truncate">
-                        {fileData.file.name}
+                    <div className="flex items-center justify-center space-x-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => previewFile(currentFile)}
+                        className="flex items-center"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Preview
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => config.ref.current?.click()}
+                        disabled={isUploading}
+                        className="flex items-center"
+                      >
+                        <Upload className="w-3 h-3 mr-1" />
+                        Replace
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => removeFile(documentType)}
+                        disabled={isUploading}
+                        className="flex items-center text-error-600 hover:text-error-700"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Empty State
+                  <div className="space-y-3">
+                    <Upload className="w-8 h-8 text-secondary-400 mx-auto" />
+                    <div>
+                      <p className="text-sm font-medium text-secondary-900">
+                        Drop file here or click to browse
                       </p>
                       <p className="text-xs text-secondary-600">
-                        {formatFileSize(fileData.file.size)}
+                        PDF, JPG, PNG (max 5MB)
                       </p>
                     </div>
                     
-                    <div className="flex items-center space-x-2 ml-3">
-                      {/* Preview Button */}
-                      <button
-                        type="button"
-                        onClick={() => previewFile(fileData)}
-                        className="p-1 text-secondary-400 hover:text-secondary-600 transition-colors"
-                        title="Preview file"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      
-                      {/* Remove Button */}
-                      <button
-                        type="button"
-                        onClick={() => removeFile(fileData.id)}
-                        className="p-1 text-error-400 hover:text-error-600 transition-colors"
-                        disabled={uploading}
-                        title="Remove file"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => config.ref.current?.click()}
+                      disabled={isUploading}
+                    >
+                      Choose File
+                    </Button>
+                  </div>
+                )}
+              </div>
 
-        {/* Upload Progress */}
-        {uploading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-3"
-          >
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-secondary-700">Uploading documents...</span>
-              <span className="text-secondary-600">{Math.round(uploadProgress)}%</span>
-            </div>
-            
-            <div className="w-full bg-secondary-200 rounded-full h-2">
-              <motion.div
-                className="bg-primary-600 h-2 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${uploadProgress}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-            
-            <div className="flex items-center justify-center py-4">
-              <LoadingSpinner size="sm" className="mr-2" />
-              <span className="text-sm text-secondary-600">
-                Please wait while we upload your documents...
-              </span>
-            </div>
-          </motion.div>
-        )}
+              {/* Upload Progress for this document */}
+              {isUploading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-secondary-700">Uploading {config.title.toLowerCase()}...</span>
+                    <span className="text-secondary-600">{Math.round(progress)}%</span>
+                  </div>
+                  
+                  <div className="w-full bg-secondary-200 rounded-full h-2">
+                    <motion.div
+                      className="bg-primary-600 h-2 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-center py-2">
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    <span className="text-xs text-secondary-600">
+                      Please wait...
+                    </span>
+                  </div>
+                </motion.div>
+              )}
 
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            variant="primary"
-            loading={uploading}
-            disabled={selectedFiles.length === 0 || success}
-            className="min-w-[140px]"
-          >
-            {uploading ? 'Uploading...' : 'Submit Documents'}
-          </Button>
-        </div>
-      </form>
+              {/* Individual Upload Button */}
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  loading={isUploading}
+                  disabled={!currentFile || isSuccess}
+                  onClick={() => handleDocumentUpload(documentType)}
+                  className="min-w-[120px]"
+                >
+                  {isUploading ? 'Uploading...' : isSuccess ? 'Uploaded' : 'Upload Document'}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+
+      </div>
     </motion.div>
   );
 };

@@ -80,6 +80,11 @@ const useAuth = () => {
     return user?.phone_verified === true || user?.phoneVerified === true || user?.is_phone_verified === true
   }
 
+  const isProfileCompleted = () => {
+    // Handle different field name formats from backend
+    return user?.profile_completed === true || user?.profileCompleted === true
+  }
+
   const getKYCStatus = () => {
     // Handle different field name formats from backend
     return user?.kyc_status || user?.kycStatus || user?.kyc?.status || 'not_submitted'
@@ -198,6 +203,7 @@ const useAuth = () => {
     isKYCPending,
     isKYCRejected,
     isPhoneVerified,
+    isProfileCompleted,
     
     // Permission helpers
     canAccessProtectedRoutes,

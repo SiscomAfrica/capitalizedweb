@@ -137,20 +137,42 @@ class AuthClient {
   /**
    * Update user profile (requires authentication)
    * @param {Object} profileData - Profile update data
-   * @param {string} profileData.firstName - User first name
-   * @param {string} profileData.lastName - User last name
+   * @param {string} profileData.firstName - User first name (optional)
+   * @param {string} profileData.lastName - User last name (optional)
+   * @param {string} profileData.date_of_birth - Date of birth in ISO format (optional)
+   * @param {string} profileData.country - User country (optional)
+   * @param {string} profileData.city - User city (optional)
+   * @param {string} profileData.address - User address (optional)
    * @returns {Promise<Object>} Updated profile data
    */
   async updateProfile(profileData) {
     try {
-      const response = await axiosInstance.put(`${this.baseURL}/profile`, {
-        first_name: profileData.firstName,
-        last_name: profileData.lastName,
-      })
+      const updateData = {};
+      
+      // Handle name fields
+      if (profileData.firstName || profileData.lastName) {
+        updateData.full_name = `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim();
+      }
+      
+      // Handle profile completion fields
+      if (profileData.date_of_birth) {
+        updateData.date_of_birth = profileData.date_of_birth;
+      }
+      if (profileData.country) {
+        updateData.country = profileData.country;
+      }
+      if (profileData.city) {
+        updateData.city = profileData.city;
+      }
+      if (profileData.address) {
+        updateData.address = profileData.address;
+      }
 
-      return response.data
+      const response = await axiosInstance.put(`${this.baseURL}/profile`, updateData);
+
+      return response.data;
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 

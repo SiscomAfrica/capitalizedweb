@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { 
   X,
   Home,
+  LayoutDashboard,
   TrendingUp,
   Briefcase,
   CreditCard,
@@ -21,9 +22,15 @@ const Sidebar = ({ isOpen, onClose }) => {
   // Navigation links
   const navigationLinks = [
     { 
+      name: 'Public Home', 
+      href: '/', 
+      icon: Home,
+      description: 'Return to homepage'
+    },
+    { 
       name: 'Dashboard', 
       href: '/dashboard', 
-      icon: Home,
+      icon: LayoutDashboard,
       description: 'Overview and quick actions'
     },
     { 
@@ -55,18 +62,8 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: User,
       description: 'Account settings'
     },
-    { 
-      name: 'Settings', 
-      href: '/settings', 
-      icon: Settings,
-      description: 'App preferences'
-    },
-    { 
-      name: 'Help & Support', 
-      href: '/help', 
-      icon: HelpCircle,
-      description: 'Get assistance'
-    },
+   
+  
   ];
 
   // Check if current path is active
