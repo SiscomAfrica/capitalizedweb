@@ -32,7 +32,7 @@ const VerifyPhonePage = () => {
       navigate(from, { 
         replace: true,
         state: {
-          message: 'Phone verification successful! Welcome to SISCOM Africa.'
+          message: 'Phone verification successful! Welcome to Capitalized.'
         }
       });
     }
@@ -117,7 +117,7 @@ const VerifyPhonePage = () => {
             </svg>
           </motion.div>
           <h1 className="text-3xl font-bold text-secondary-900">
-            SISCOM Africa
+            Capitalized
           </h1>
           <p className="text-secondary-600 mt-2">
             Verify Your Phone Number

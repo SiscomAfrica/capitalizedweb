@@ -79,7 +79,7 @@ const Header = ({ onMenuToggle }) => {
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">SA</span>
               </div>
-              <span className="font-bold text-xl hidden sm:block">SISCOM Africa</span>
+              <span className="font-bold text-xl hidden sm:block">Capitalized</span>
             </Link>
           </div>
 

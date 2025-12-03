@@ -74,7 +74,7 @@ const RegisterPage = () => {
             </svg>
           </motion.div>
           <h1 className="text-3xl font-bold text-secondary-900">
-            SISCOM Africa
+            Capitalized
           </h1>
           <p className="text-secondary-600 mt-2">
             Start Your Investment Journey
@@ -115,7 +115,7 @@ const RegisterPage = () => {
           className="mt-8 bg-white/80 backdrop-blur-sm rounded-lg p-6"
         >
           <h3 className="text-lg font-semibold text-secondary-900 mb-4 text-center">
-            Why Choose SISCOM Africa?
+            Why Choose Capitalized?
           </h3>
           <div className="space-y-3">
             <div className="flex items-center text-sm text-secondary-700">
