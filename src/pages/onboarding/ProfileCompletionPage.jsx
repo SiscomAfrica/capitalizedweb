@@ -157,13 +157,10 @@ const ProfileCompletionPage = () => {
 
       setSuccess(true);
 
-      // Navigate to KYC step after a short delay
+      // Navigate to dashboard after a short delay (streamlined flow)
       setTimeout(() => {
         const from = location.state?.from || '/dashboard';
-        navigate('/onboarding/kyc', { 
-          state: { from },
-          replace: true 
-        });
+        navigate(from, { replace: true });
       }, 1500);
 
     } catch (err) {
@@ -235,7 +232,7 @@ const ProfileCompletionPage = () => {
               <span className={isFormComplete() ? 'text-primary-600 font-medium' : ''}>
                 Profile {isFormComplete() ? '✓' : ''}
               </span>
-              <span>KYC Documents</span>
+              <span>Dashboard Access</span>
             </div>
           </div>
 
@@ -249,7 +246,7 @@ const ProfileCompletionPage = () => {
               <CheckCircle className="w-5 h-5 text-success-600 mr-3" />
               <div>
                 <p className="text-success-800 font-medium">Profile completed successfully!</p>
-                <p className="text-success-600 text-sm">Proceeding to KYC verification...</p>
+                <p className="text-success-600 text-sm">You can now access your dashboard and start investing...</p>
               </div>
             </motion.div>
           )}
@@ -379,7 +376,7 @@ const ProfileCompletionPage = () => {
                 ) : (
                   <ArrowRight className="w-4 h-4 mr-2" />
                 )}
-                {loading ? 'Saving...' : 'Continue to KYC'}
+                {loading ? 'Saving...' : 'Complete Profile'}
               </Button>
             </div>
 

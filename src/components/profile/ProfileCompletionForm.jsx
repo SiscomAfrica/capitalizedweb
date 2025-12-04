@@ -8,7 +8,7 @@ import Input from '../common/Input';
 import ErrorMessage from '../common/ErrorMessage';
 import Card from '../common/Card';
 
-const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
+const ProfileCompletionForm = ({ onSuccess, onSkip, loading: externalLoading, showSkipOption = false }) => {
   const { user, updateUser } = useAuth();
   const [formData, setFormData] = useState({
     dateOfBirth: '',
@@ -17,6 +17,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
     address: ''
   });
   const [loading, setLoading] = useState(false);
+  const isLoading = externalLoading || loading;
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
@@ -176,27 +177,15 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-50 flex items-center justify-center p-4">
+    <div className="w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-2xl"
+        className="w-full"
       >
-        <Card className="p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-8 h-8 text-primary-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-secondary-900 mb-2">
-              Complete Your Profile
-            </h1>
-            <p className="text-secondary-600">
-              Please provide the following information to access your dashboard. 
-              You can upload identity documents later.
-            </p>
-          </div>
+        <div className="space-y-6">
+
 
           {/* Success Message */}
           {success && (
@@ -208,7 +197,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
               <CheckCircle className="w-5 h-5 text-success-600 mr-3" />
               <div>
                 <p className="text-success-800 font-medium">Profile completed successfully!</p>
-                <p className="text-success-600 text-sm">Redirecting to your dashboard...</p>
+                <p className="text-success-600 text-sm">Proceeding to next step...</p>
               </div>
             </motion.div>
           )}
@@ -219,21 +208,6 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
               <ErrorMessage message={error} />
             </div>
           )}
-
-          {/* Progress Indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between text-sm text-secondary-600 mb-2">
-              <span>Profile Completion</span>
-              <span>{isFormComplete() ? '100%' : '0%'}</span>
-            </div>
-            <div className="w-full bg-secondary-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  isFormComplete() ? 'bg-success-500 w-full' : 'bg-primary-500 w-0'
-                }`}
-              />
-            </div>
-          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -250,7 +224,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
                 value={formData.dateOfBirth}
                 onChange={handleInputChange('dateOfBirth')}
                 error={validationErrors.dateOfBirth}
-                disabled={loading || success}
+                disabled={isLoading || success}
                 required
                 max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
               />
@@ -270,7 +244,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
                 onChange={handleInputChange('country')}
                 error={validationErrors.country}
                 placeholder="Enter your country"
-                disabled={loading || success}
+                disabled={isLoading || success}
                 required
                 maxLength={100}
               />
@@ -290,7 +264,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
                 onChange={handleInputChange('city')}
                 error={validationErrors.city}
                 placeholder="Enter your city"
-                disabled={loading || success}
+                disabled={isLoading || success}
                 required
                 maxLength={100}
               />
@@ -308,7 +282,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
                 value={formData.address}
                 onChange={handleInputChange('address')}
                 placeholder="Enter your full address"
-                disabled={loading || success}
+                disabled={isLoading || success}
                 required
                 maxLength={500}
                 rows={3}
@@ -317,7 +291,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
                     ? 'border-error-300 focus:ring-error-500 focus:border-error-500' 
                     : 'border-secondary-300'
                 } ${
-                  loading || success ? 'bg-secondary-50 cursor-not-allowed' : 'bg-white'
+                  isLoading || success ? 'bg-secondary-50 cursor-not-allowed' : 'bg-white'
                 }`}
               />
               {validationErrors.address && (
@@ -329,49 +303,34 @@ const ProfileCompletionForm = ({ onSuccess, onSkip }) => {
             </div>
 
             {/* Form Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6">
+            <div className="flex flex-col gap-3 pt-6">
               <Button
                 type="submit"
                 variant="primary"
-                loading={loading}
+                loading={isLoading}
                 disabled={!isFormComplete() || success}
-                className="flex-1 flex items-center justify-center"
+                className="w-full flex items-center justify-center"
+                size="lg"
               >
                 <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Complete Profile'}
+                {isLoading ? 'Saving Profile...' : 'Complete Profile'}
               </Button>
 
-              {onSkip && (
+              {showSkipOption && onSkip && (
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={onSkip}
-                  disabled={loading || success}
-                  className="flex items-center justify-center"
+                  disabled={isLoading || success}
+                  className="w-full flex items-center justify-center"
                 >
                   Skip for Now
                 </Button>
               )}
             </div>
 
-            {/* Info Note */}
-            <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mt-6">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-primary-600 mt-0.5" />
-                <div className="text-sm">
-                  <p className="text-primary-800 font-medium mb-1">
-                    Why do we need this information?
-                  </p>
-                  <p className="text-primary-700">
-                    This information helps us provide you with personalized investment 
-                    opportunities and comply with financial regulations. You can upload 
-                    identity documents later for KYC verification.
-                  </p>
-                </div>
-              </div>
-            </div>
           </form>
-        </Card>
+        </div>
       </motion.div>
     </div>
   );

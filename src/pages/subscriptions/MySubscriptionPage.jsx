@@ -6,6 +6,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import ProtectedRoute from '../../components/auth/ProtectedRoute'
 import SubscriptionStatus from '../../components/subscriptions/SubscriptionStatus'
 import CancelSubscription from '../../components/subscriptions/CancelSubscription'
+import FreeTrialBanner from '../../components/subscriptions/FreeTrialBanner'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import { SUCCESS_MESSAGES } from '../../utils/constants'
@@ -67,6 +68,9 @@ const MySubscriptionPage = () => {
     <ProtectedRoute>
       <DashboardLayout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Free Trial Banner */}
+          <FreeTrialBanner />
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -206,7 +210,7 @@ const MySubscriptionPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Button
                   variant="secondary"
-                  onClick={() => navigate('/plans')}
+                  onClick={() => navigate('/subscriptions/plans')}
                   className="justify-start"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />

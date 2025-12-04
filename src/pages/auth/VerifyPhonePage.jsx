@@ -29,14 +29,18 @@ const VerifyPhonePage = () => {
   // Redirect if already phone verified
   useEffect(() => {
     if (isAuthenticated && !isLoading && isPhoneVerified()) {
-      navigate(from, { 
+      // Check if profile is completed to determine redirect
+      const profileCompleted = user?.profile_completed || user?.profileCompleted;
+      const redirectTo = profileCompleted ? '/dashboard' : '/onboarding/streamlined';
+      
+      navigate(redirectTo, { 
         replace: true,
         state: {
-          message: 'Phone verification successful! Welcome to Capitalized.'
+          message: 'Phone verification successful! Welcome to Africa Investment Platform.'
         }
       });
     }
-  }, [isAuthenticated, isLoading, isPhoneVerified, navigate, from]);
+  }, [isAuthenticated, isLoading, isPhoneVerified, navigate, user]);
 
   const handleVerificationSuccess = (response) => {
     setPageLoading(true);

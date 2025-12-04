@@ -31,7 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       name: 'Dashboard', 
       href: '/dashboard', 
       icon: LayoutDashboard,
-      description: 'Overview and quick actions'
+      description: 'Event attendees list'
     },
     { 
       name: 'Investments', 
@@ -45,12 +45,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Briefcase,
       description: 'Track your investments',
       requiresKYC: true
-    },
-    { 
-      name: 'Subscriptions', 
-      href: '/subscriptions', 
-      icon: CreditCard,
-      description: 'Manage your plans'
     },
   ];
 

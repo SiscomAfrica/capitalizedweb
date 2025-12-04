@@ -19,6 +19,7 @@ import ProfilePage from './pages/profile/ProfilePage';
 // Onboarding Pages
 import ProfileCompletionPage from './pages/onboarding/ProfileCompletionPage';
 import KYCOnboardingPage from './pages/onboarding/KYCOnboardingPage';
+import StreamlinedOnboardingPage from './pages/onboarding/StreamlinedOnboardingPage';
 
 // Investment Pages
 import ProductsPage from './pages/investments/ProductsPage';
@@ -52,9 +53,9 @@ const PageTransition = ({ children }) => (
 );
 
 // Wrapper for protected routes with transitions
-const ProtectedPageTransition = ({ children, requireKYC = false }) => (
+const ProtectedPageTransition = ({ children, requireSubscription = false }) => (
   <ProtectedRoute>
-    <OnboardingGuard requireKYC={requireKYC}>
+    <OnboardingGuard requireSubscription={requireSubscription}>
       <PageTransition>
         {children}
       </PageTransition>
@@ -131,6 +132,16 @@ export const router = createBrowserRouter([
     path: '/onboarding',
     children: [
       {
+        path: 'streamlined',
+        element: (
+          <ProtectedRoute>
+            <PageTransition>
+              <StreamlinedOnboardingPage />
+            </PageTransition>
+          </ProtectedRoute>
+        )
+      },
+      {
         path: 'profile',
         element: (
           <ProtectedRoute>
@@ -150,10 +161,10 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
-      // Redirect /onboarding to /onboarding/profile
+      // Redirect /onboarding to /onboarding/streamlined (new default)
       {
         path: '',
-        element: <Navigate to="profile" replace />
+        element: <Navigate to="streamlined" replace />
       }
     ]
   },
@@ -181,7 +192,7 @@ export const router = createBrowserRouter([
       {
         path: 'inquiries',
         element: (
-          <ProtectedPageTransition requireKYC={true}>
+          <ProtectedPageTransition>
             <InquiriesPage />
           </ProtectedPageTransition>
         )
@@ -194,11 +205,11 @@ export const router = createBrowserRouter([
     ]
   },
 
-  // Portfolio Routes (Protected - Requires KYC)
+  // Portfolio Routes (Protected - Requires Subscription)
   {
     path: '/portfolio',
     element: (
-      <ProtectedPageTransition requireKYC={true}>
+      <ProtectedPageTransition requireSubscription={true}>
         <PortfolioPage />
       </ProtectedPageTransition>
     )
@@ -230,6 +241,16 @@ export const router = createBrowserRouter([
         element: <Navigate to="plans" replace />
       }
     ]
+  },
+
+  // Direct subscription routes for backward compatibility
+  {
+    path: '/plans',
+    element: <Navigate to="/subscriptions/plans" replace />
+  },
+  {
+    path: '/my-subscription',
+    element: <Navigate to="/subscriptions/my-subscription" replace />
   },
 
   // Catch-all route - redirect to dashboard

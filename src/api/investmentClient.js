@@ -93,6 +93,24 @@ class InvestmentClient {
       console.log('Access token available:', !!token)
       console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token')
       
+      // Decode token to see user ID (for debugging)
+      if (token) {
+        try {
+          const tokenParts = token.split('.')
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]))
+            console.log('Token payload:', {
+              sub: payload.sub,
+              email: payload.email,
+              exp: new Date(payload.exp * 1000).toISOString(),
+              iat: new Date(payload.iat * 1000).toISOString()
+            })
+          }
+        } catch (decodeError) {
+          console.error('Failed to decode token:', decodeError)
+        }
+      }
+      
       const requestData = {
         product_id: inquiryData.productId,
         investment_amount: inquiryData.amount,
@@ -113,8 +131,20 @@ class InvestmentClient {
       console.error('Error details:', {
         status: error.status,
         message: error.message,
-        data: error.data
+        data: error.data,
+        response: error.response?.data
       })
+      
+      // Log the full error response for debugging
+      if (error.response) {
+        console.error('Full error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          headers: error.response.headers,
+          data: error.response.data
+        })
+      }
+      
       throw error
     }
   }

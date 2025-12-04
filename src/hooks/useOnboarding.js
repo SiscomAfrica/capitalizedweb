@@ -3,12 +3,12 @@ import useAuth from './useAuth';
 
 /**
  * Hook to manage user onboarding status and flow
- * Determines what steps the user needs to complete before accessing the dashboard
+ * Implements the streamlined flow: Register → Phone Verification → Profile Completion → Free Trial → Dashboard Access
  */
 const useOnboarding = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isPhoneVerified } = useAuth();
 
-  // Calculate onboarding status
+  // Calculate onboarding status for streamlined flow
   const onboardingStatus = useMemo(() => {
     if (!isAuthenticated || !user) {
       return {
@@ -17,60 +17,63 @@ const useOnboarding = () => {
         nextStep: 'login',
         redirectTo: '/login',
         canAccessDashboard: false,
+        canInvest: false,
+        canSubscribe: false,
         steps: {
           phoneVerified: false,
           profileCompleted: false,
-          kycSubmitted: false,
-          kycApproved: false
+          freeTrialActivated: false
         }
       };
     }
 
-    // Check each onboarding step
-    const phoneVerified = user.phone_verified || user.phoneVerified || false;
+    // Check each step in the streamlined flow
+    const phoneVerified = isPhoneVerified();
     const profileCompleted = user.profile_completed || user.profileCompleted || false;
-    const kycSubmitted = user.kyc_status !== 'not_submitted' && user.kyc_status !== undefined;
-    const kycApproved = user.kyc_status === 'approved';
-    const kycCompleted = user.kyc_status === 'completed';
-    const kycSkipped = user.kyc_status === 'skipped';
+    
+    // Check if user has any active subscription (including free trial)
+    const hasActiveSubscription = user.subscription_status === 'active' || 
+                                 user.subscription_status === 'trial' ||
+                                 user.has_active_subscription === true;
 
-    // Determine current step and next action
+    // Determine current step and next action based on streamlined flow
     let currentStep = 'complete';
     let nextStep = 'complete';
     let redirectTo = '/dashboard';
     let canAccessDashboard = false;
+    let canInvest = false;
+    let canSubscribe = false;
 
     if (!phoneVerified) {
+      // Step 1: Phone Verification (should be handled before reaching onboarding)
       currentStep = 'phone_verification';
       nextStep = 'verify_phone';
       redirectTo = '/verify-phone';
     } else if (!profileCompleted) {
+      // Step 2: Profile Completion
       currentStep = 'profile_completion';
       nextStep = 'complete_profile';
-      redirectTo = '/onboarding/profile';
+      redirectTo = '/onboarding/streamlined';
     } else {
-      // Profile is completed - allow dashboard access
-      // KYC is optional and can be completed later
+      // Step 3: Profile completed - user can access dashboard and features
       canAccessDashboard = true;
+      canInvest = true; // Can submit investment inquiries
+      canSubscribe = true; // Can subscribe to plans
       
-      if (!kycSubmitted) {
-        currentStep = 'kyc_optional';
-        nextStep = 'submit_kyc_optional';
-        // Don't redirect - user can access dashboard
-      } else if (user.kyc_status === 'pending') {
-        currentStep = 'kyc_pending';
-        nextStep = 'kyc_under_review';
-      } else if (user.kyc_status === 'rejected') {
-        currentStep = 'kyc_rejected';
-        nextStep = 'resubmit_kyc';
-      } else if (kycCompleted || kycSkipped || kycApproved) {
+      if (!hasActiveSubscription) {
+        // Step 4: Free trial available but not required for dashboard access
+        currentStep = 'free_trial_available';
+        nextStep = 'activate_free_trial';
+        // Don't redirect - user can access dashboard without trial
+      } else {
+        // Step 5: Complete - user has subscription
         currentStep = 'complete';
         nextStep = 'complete';
       }
     }
 
-    // Core onboarding is complete when phone is verified and profile is completed
-    // KYC is optional for dashboard access
+    // Streamlined onboarding is complete when phone is verified and profile is completed
+    // Free trial is optional but recommended
     const isComplete = phoneVerified && profileCompleted;
 
     return {
@@ -79,20 +82,20 @@ const useOnboarding = () => {
       nextStep,
       redirectTo,
       canAccessDashboard,
+      canInvest,
+      canSubscribe,
       steps: {
         phoneVerified,
         profileCompleted,
-        kycSubmitted,
-        kycApproved
+        freeTrialActivated: hasActiveSubscription
       },
       progress: {
         completed: [
           phoneVerified && 'phone_verification',
           profileCompleted && 'profile_completion',
-          kycSubmitted && 'kyc_submission',
-          kycApproved && 'kyc_approval'
+          hasActiveSubscription && 'free_trial_activation'
         ].filter(Boolean),
-        total: 2, // phone, profile (KYC is optional for dashboard access)
+        total: 2, // phone + profile (free trial is optional)
         percentage: Math.round(
           ([phoneVerified, profileCompleted].filter(Boolean).length / 2) * 100
         )
@@ -104,8 +107,10 @@ const useOnboarding = () => {
     user?.phoneVerified,
     user?.profile_completed,
     user?.profileCompleted,
-    user?.kyc_status,
-    isAuthenticated
+    user?.subscription_status,
+    user?.has_active_subscription,
+    isAuthenticated,
+    isPhoneVerified
   ]);
 
   // Helper functions
@@ -118,18 +123,13 @@ const useOnboarding = () => {
       case 'verify_phone':
         return 'Please verify your phone number to continue';
       case 'complete_profile':
-        return 'Complete your profile to access the dashboard';
-      case 'submit_kyc':
-        return 'Complete your KYC process to access the dashboard';
-      case 'kyc_under_review':
-        return 'Your KYC documents are under review';
-      case 'resubmit_kyc':
-        return 'Please resubmit your KYC documents';
-
+        return 'Complete your profile to access the dashboard and start investing';
+      case 'activate_free_trial':
+        return 'Activate your free trial to unlock premium features';
       case 'complete':
-        return 'Onboarding complete! Welcome to your dashboard';
+        return 'Welcome to your investment dashboard!';
       default:
-        return 'Continue with the onboarding process';
+        return 'Continue with the setup process';
     }
   };
 
@@ -139,17 +139,12 @@ const useOnboarding = () => {
         return 'Verify Phone Number';
       case 'profile_completion':
         return 'Complete Profile';
-      case 'kyc_submission':
-        return 'Complete KYC Process';
-      case 'kyc_pending':
-        return 'KYC Under Review';
-      case 'kyc_rejected':
-        return 'KYC Resubmission Required';
-
+      case 'free_trial_available':
+        return 'Free Trial Available';
       case 'complete':
-        return 'Onboarding Complete';
+        return 'Setup Complete';
       default:
-        return 'Onboarding';
+        return 'Getting Started';
     }
   };
 
@@ -158,18 +153,13 @@ const useOnboarding = () => {
       case 'phone_verification':
         return 'Verify your phone number with the OTP code sent to you';
       case 'profile_completion':
-        return 'Provide your personal information including date of birth, country, city, and address';
-      case 'kyc_submission':
-        return 'Complete the KYC process (document upload is optional for now)';
-      case 'kyc_pending':
-        return 'Your documents are being reviewed by our team';
-      case 'kyc_rejected':
-        return 'Your previous submission was not approved. Please resubmit with correct documents';
-
+        return 'Provide basic information to personalize your investment experience';
+      case 'free_trial_available':
+        return 'Activate your 7-day free trial to access premium features';
       case 'complete':
-        return 'You have successfully completed the onboarding process';
+        return 'You can now access all platform features and start investing';
       default:
-        return 'Complete the required steps to access your dashboard';
+        return 'Complete the setup to access your investment dashboard';
     }
   };
 

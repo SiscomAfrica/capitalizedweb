@@ -1,32 +1,28 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { CreditCard, Check, Star } from 'lucide-react'
+import { Check, Sparkles, Clock, ArrowRight } from 'lucide-react'
 import subscriptionClient from '../../api/subscriptionClient'
 import useAuth from '../../hooks/useAuth'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import ProtectedRoute from '../../components/auth/ProtectedRoute'
-import PlanGrid from '../../components/subscriptions/PlanGrid'
-import PlanComparison from '../../components/subscriptions/PlanComparison'
+import FreeTrialBanner from '../../components/subscriptions/FreeTrialBanner'
 import Button from '../../components/common/Button'
 import Card from '../../components/common/Card'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import ErrorMessage from '../../components/common/ErrorMessage'
-import { SUCCESS_MESSAGES } from '../../utils/constants'
 
 /**
  * PlansPage Component
- * Displays subscription plans with grid and comparison views
+ * Focuses on free trial activation - no subscription plans shown
  */
 const PlansPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [showComparison, setShowComparison] = useState(false)
-  const [plans, setPlans] = useState([])
 
-  const handlePlanSelect = async (planId) => {
+  const handleStartFreeTrial = async () => {
     if (!user) {
       navigate('/login')
       return
@@ -36,62 +32,36 @@ const PlansPage = () => {
       setLoading(true)
       setError(null)
 
-      // Find the selected plan to check if it has a trial
-      const selectedPlan = plans.find(plan => plan.id === planId)
-      const hasFreeTrial = selectedPlan?.trialDays && selectedPlan.trialDays > 0
-
-      let response
-
-      if (hasFreeTrial) {
-        // Check if user already has a subscription
-        try {
-          const existingSubscription = await subscriptionClient.getMySubscription()
-          if (existingSubscription?.subscription) {
-            // User already has a subscription, create paid subscription
-            response = await subscriptionClient.createSubscription({ planId })
-          } else {
-            // Start free trial
-            response = await subscriptionClient.startFreeTrial()
-          }
-        } catch (error) {
-          // If error getting subscription (likely 404), start trial
-          if (error.status === 404) {
-            response = await subscriptionClient.startFreeTrial()
-          } else {
-            throw error
-          }
-        }
-      } else {
-        // Create regular subscription
-        response = await subscriptionClient.createSubscription({ planId })
-      }
+      const response = await subscriptionClient.startFreeTrial()
       
-      // Show success message
-      if (hasFreeTrial && response.success) {
-        alert('Free trial started successfully!')
-      } else {
-        alert(SUCCESS_MESSAGES.SUBSCRIPTION_CREATED)
+      if (response.success) {
+        alert('🎉 Free trial started successfully! You now have 7 days of premium access.')
+        navigate('/subscriptions/my-subscription')
       }
-      
-      // Navigate to subscription status
-      navigate('/my-subscription')
       
     } catch (err) {
-      console.error('Error creating subscription:', err)
-      setError(err.response?.data?.message || 'Failed to create subscription')
+      console.error('Error starting free trial:', err)
+      
+      // Handle specific error cases
+      if (err.response?.status === 409) {
+        setError('You already have an active subscription or have used your free trial.')
+      } else if (err.response?.status === 403) {
+        setError('Please complete your profile first to start your free trial.')
+      } else {
+        setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to start free trial')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const handlePlansLoaded = (loadedPlans) => {
-    setPlans(loadedPlans)
-  }
-
   return (
     <ProtectedRoute>
       <DashboardLayout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Free Trial Banner */}
+          <FreeTrialBanner />
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -99,39 +69,13 @@ const PlansPage = () => {
             transition={{ duration: 0.3 }}
             className="text-center mb-12"
           >
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Choose Your Plan
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Start Your Investment Journey
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Unlock premium features and take your investment journey to the next level. 
-              All plans include 24/7 support and can be cancelled anytime.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Get 7 days of premium access to explore all investment opportunities. 
+              No credit card required - start your free trial today.
             </p>
-          </motion.div>
-
-          {/* View Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="flex justify-center mb-8"
-          >
-            <div className="bg-gray-100 p-1 rounded-lg">
-              <Button
-                variant={!showComparison ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setShowComparison(false)}
-                className="mr-1"
-              >
-                Grid View
-              </Button>
-              <Button
-                variant={showComparison ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setShowComparison(true)}
-              >
-                Compare Plans
-              </Button>
-            </div>
           </motion.div>
 
           {/* Loading State */}
@@ -139,7 +83,7 @@ const PlansPage = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <Card className="p-6 text-center">
                 <LoadingSpinner size="lg" />
-                <p className="mt-4 text-gray-600">Creating your subscription...</p>
+                <p className="mt-4 text-gray-600">Starting your free trial...</p>
               </Card>
             </div>
           )}
@@ -159,23 +103,77 @@ const PlansPage = () => {
             </motion.div>
           )}
 
-          {/* Plans Display */}
+          {/* Free Trial Offer */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
+            className="mb-16"
           >
-            {showComparison ? (
-              <PlanComparison 
-                plans={plans}
-                onPlanSelect={handlePlanSelect}
-              />
-            ) : (
-              <PlanGrid 
-                onPlanSelect={handlePlanSelect}
-                onPlansLoaded={handlePlansLoaded}
-              />
-            )}
+            <Card className="overflow-hidden border-0 shadow-2xl">
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1">
+                <div className="bg-white rounded-lg p-8">
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                      7-Day Free Trial
+                    </h2>
+                    <p className="text-lg text-gray-600 mb-8">
+                      Experience the full power of our investment platform with complete access to all premium features.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-gray-700 font-medium">Unlimited investment inquiries</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-gray-700 font-medium">Premium market insights & analysis</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-gray-700 font-medium">Advanced portfolio tracking tools</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-gray-700 font-medium">Priority customer support</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      size="xl"
+                      onClick={handleStartFreeTrial}
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      {loading ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-3" />
+                          Starting Trial...
+                        </>
+                      ) : (
+                        <>
+                          Start Free Trial Now
+                          <ArrowRight className="w-6 h-6 ml-3" />
+                        </>
+                      )}
+                    </Button>
+                    
+                    <p className="text-sm text-gray-500 mt-6">
+                      No commitment • Cancel anytime • Full access for 7 days • No credit card required
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </motion.div>
 
           {/* Features Highlight */}
@@ -183,46 +181,37 @@ const PlansPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.3 }}
-            className="mt-16"
+            className="mb-16"
           >
             <Card className="p-8">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Why Choose Our Premium Plans?
+                  What You Get During Your Free Trial
                 </h2>
                 <p className="text-gray-600">
-                  Get access to exclusive features designed to maximize your investment potential
+                  Experience all premium features and see how our platform can accelerate your investment journey
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Star className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900 mb-2">Premium Insights</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Premium Market Insights</h3>
                   <p className="text-gray-600 text-sm">
-                    Get detailed market analysis and investment recommendations from our experts
+                    Get detailed market analysis, investment recommendations, and expert insights to make informed decisions
                   </p>
                 </div>
 
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900 mb-2">Priority Support</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Priority Support</h3>
                   <p className="text-gray-600 text-sm">
-                    Get faster response times and dedicated support from our investment team
+                    Get faster response times and dedicated support from our experienced investment team
                   </p>
                 </div>
 
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <CreditCard className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <h3 className="font-medium text-gray-900 mb-2">Advanced Tools</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Advanced Analytics</h3>
                   <p className="text-gray-600 text-sm">
-                    Access advanced portfolio analytics and investment tracking tools
+                    Access advanced portfolio analytics, risk assessment tools, and performance tracking
                   </p>
                 </div>
               </div>
@@ -234,7 +223,6 @@ const PlansPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.4 }}
-            className="mt-16"
           >
             <Card className="p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
@@ -243,42 +231,41 @@ const PlansPage = () => {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    Can I cancel my subscription anytime?
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    What happens after my 7-day free trial?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Yes, you can cancel your subscription at any time. You'll continue to have access 
-                    to premium features until the end of your current billing period.
+                    Your trial will automatically expire after 7 days. You can continue using basic features 
+                    or upgrade to a premium plan to maintain full access.
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    Do you offer refunds?
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Do I need to provide payment information?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    We offer a full refund within 7 days of your initial subscription. 
-                    After that, no refunds are provided for the current billing period.
+                    No! Our free trial requires no credit card or payment information. 
+                    Simply complete your profile and start exploring.
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    Can I upgrade or downgrade my plan?
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Can I cancel my trial anytime?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Yes, you can change your plan at any time. Changes will take effect 
-                    at the start of your next billing cycle.
+                    Yes, you can cancel your trial at any time. There are no commitments or hidden fees.
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    What payment methods do you accept?
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    What investment opportunities are available?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    We accept M-Pesa, bank transfers, and major credit/debit cards. 
-                    All payments are processed securely.
+                    During your trial, you'll have access to browse all investment opportunities, 
+                    submit inquiries, and use our analysis tools to evaluate potential investments.
                   </p>
                 </div>
               </div>

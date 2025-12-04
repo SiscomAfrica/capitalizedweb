@@ -30,12 +30,19 @@ const PlanCard = ({
     isActive = true
   } = plan
 
-  // Ensure features is always an array
+  // Ensure features is always an array with fallback
   const featuresList = Array.isArray(features) 
     ? features 
     : features && typeof features === 'object' 
       ? Object.values(features).filter(Boolean)
-      : []
+      : features && typeof features === 'string'
+        ? [features]
+        : [
+            'Access to investment opportunities',
+            'Portfolio tracking',
+            'Customer support',
+            'Market insights'
+          ] // Default features if none provided
 
   const handleSelect = () => {
     if (onSelect && isActive && !isLoading) {
@@ -44,6 +51,8 @@ const PlanCard = ({
   }
 
   const formatPrice = (amount) => {
+    if (amount === undefined || amount === null) return '$0'
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -52,10 +61,14 @@ const PlanCard = ({
   }
 
   const getBillingText = (period) => {
-    switch (period) {
+    if (!period) return 'per month' // Default fallback
+    
+    switch (period.toLowerCase()) {
       case 'monthly':
         return 'per month'
       case 'yearly':
+        return 'per year'
+      case 'annual':
         return 'per year'
       default:
         return `per ${period}`

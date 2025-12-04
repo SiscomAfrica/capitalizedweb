@@ -146,24 +146,54 @@ const SubscriptionStatus = ({ onCancelClick, className = '' }) => {
     )
   }
 
-  // No active subscription
+  // No active subscription - encourage free trial
   if (!subscription) {
     return (
       <Card className={`text-center py-12 ${className}`}>
-        <div className="max-w-md mx-auto">
-          <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No Active Subscription
+        <div className="max-w-lg mx-auto">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">
+            Ready to Start Investing?
           </h3>
           <p className="text-gray-600 mb-6">
-            You don't have an active subscription. Browse our plans to get started with premium features.
+            Get 7 days of premium access to explore investment opportunities, 
+            advanced tools, and market insights. No credit card required!
           </p>
+          
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-purple-800 mb-2">Free Trial Includes:</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm text-purple-700">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Unlimited inquiries</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Premium insights</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Advanced tools</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Priority support</span>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex gap-3 justify-center">
             <Button 
               variant="primary" 
-              onClick={() => window.location.href = '/plans'}
+              size="lg"
+              onClick={() => window.location.href = '/subscriptions/plans'}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              View Plans
+              Start Free Trial
             </Button>
             <Button 
               variant="secondary" 
@@ -174,6 +204,10 @@ const SubscriptionStatus = ({ onCancelClick, className = '' }) => {
               Refresh
             </Button>
           </div>
+          
+          <p className="text-xs text-gray-500 mt-4">
+            No commitment • Cancel anytime • Full access for 7 days
+          </p>
         </div>
       </Card>
     )
@@ -277,19 +311,101 @@ const SubscriptionStatus = ({ onCancelClick, className = '' }) => {
             </div>
           </div>
 
-          {/* Trial Warning */}
+          {/* Free Trial Highlight */}
           {status === STATUS.SUBSCRIPTION.TRIAL && endDate && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-blue-900 mb-1">Trial Period Active</h4>
-                  <p className="text-blue-800 text-sm">
-                    Your free trial ends on {formatDate(endDate)}. 
-                    {autoRenew && plan.price && (
-                      <> You'll be charged {formatPrice(plan.price)} when the trial expires.</>
-                    )}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-grow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="text-lg font-bold text-blue-900">🎉 Free Trial Active!</h4>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                      PREMIUM ACCESS
+                    </span>
+                  </div>
+                  <p className="text-blue-800 mb-3">
+                    You're enjoying full premium access until <strong>{formatDate(endDate)}</strong>. 
+                    Explore all features and see how our platform can help grow your investments!
                   </p>
+                  
+                  {/* Trial Benefits */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Unlimited investment inquiries</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Premium market insights</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Advanced portfolio tools</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Priority customer support</span>
+                    </div>
+                  </div>
+
+                  {/* Trial Countdown */}
+                  <div className="bg-white/70 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900">Trial Progress</span>
+                      <span className="text-sm text-blue-700">
+                        {(() => {
+                          const now = new Date()
+                          const end = new Date(endDate)
+                          const start = new Date(startDate)
+                          const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+                          const remainingDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+                          return `${Math.max(0, remainingDays)} of ${totalDays} days remaining`
+                        })()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${(() => {
+                            const now = new Date()
+                            const end = new Date(endDate)
+                            const start = new Date(startDate)
+                            const totalTime = end - start
+                            const elapsedTime = now - start
+                            return Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100))
+                          })()}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => window.location.href = '/subscriptions/plans'}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Continue with Premium
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => window.location.href = '/investments/products'}
+                    >
+                      Explore Investments
+                    </Button>
+                  </div>
+
+                  {autoRenew && plan.price && (
+                    <p className="text-xs text-blue-600 mt-3">
+                      💡 Auto-renewal is enabled. You'll be charged {formatPrice(plan.price)} when your trial expires.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -325,7 +441,7 @@ const SubscriptionStatus = ({ onCancelClick, className = '' }) => {
             )}
             <Button
               variant="secondary"
-              onClick={() => window.location.href = '/plans'}
+              onClick={() => window.location.href = '/subscriptions/plans'}
             >
               View All Plans
             </Button>
