@@ -19,8 +19,10 @@ import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import investmentClient from '../../api/investmentClient';
+import useAuth from '../../hooks/useAuth';
 
 const InquiryList = ({ onInquiryClick }) => {
+  const { user } = useAuth();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +36,7 @@ const InquiryList = ({ onInquiryClick }) => {
   // Status options
   const statusOptions = [
     { value: '', label: 'All Status' },
+    { value: 'new', label: 'New Inquiry' },
     { value: 'pending', label: 'Pending Payment' },
     { value: 'paid', label: 'Paid' },
     { value: 'cancelled', label: 'Cancelled' }
@@ -53,13 +56,23 @@ const InquiryList = ({ onInquiryClick }) => {
       setLoading(true);
       setError(null);
       
+      // Get user's email for filtering inquiries
+      const userEmail = user?.email;
+      
+      if (!userEmail) {
+        setError('Please log in to view your inquiries');
+        setInquiries([]);
+        return;
+      }
+      
       const response = await investmentClient.getInquiries({
+        email: userEmail,
         status: filters.status || undefined,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       });
       
-      setInquiries(response.inquiries || response || []);
+      setInquiries(response || []);
     } catch (err) {
       console.error('Error fetching inquiries:', err);
       setError(err.response?.data?.message || 'Failed to load inquiries');
@@ -79,13 +92,22 @@ const InquiryList = ({ onInquiryClick }) => {
 
     // Apply client-side sorting
     filtered.sort((a, b) => {
-      let aValue = a[filters.sortBy];
-      let bValue = b[filters.sortBy];
+      let aValue, bValue;
 
       // Handle date sorting
       if (filters.sortBy === 'createdAt') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
+        aValue = new Date(a.created_at || a.createdAt);
+        bValue = new Date(b.created_at || b.createdAt);
+      } else {
+        // Map camelCase to snake_case for API fields
+        const fieldMap = {
+          'amount': 'investment_amount',
+          'productName': 'product_name',
+          'status': 'status'
+        };
+        const apiField = fieldMap[filters.sortBy] || filters.sortBy;
+        aValue = a[apiField] || a[filters.sortBy];
+        bValue = b[apiField] || b[filters.sortBy];
       }
 
       // Handle string sorting
@@ -104,10 +126,12 @@ const InquiryList = ({ onInquiryClick }) => {
     return filtered;
   }, [inquiries, filters]);
 
-  // Load inquiries on mount
+  // Load inquiries when user email is available or filters change
   useEffect(() => {
-    fetchInquiries();
-  }, []);
+    if (user?.email) {
+      fetchInquiries();
+    }
+  }, [user?.email, filters.status, filters.sortBy, filters.sortOrder]);
 
   // Handle filter changes
   const handleFilterChange = (key, value) => {
@@ -139,24 +163,47 @@ const InquiryList = ({ onInquiryClick }) => {
     fetchInquiries();
   };
 
-  // Format currency
+  // Format currency with validation
   const formatCurrency = (amount) => {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount)) return '$0';
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(numAmount);
   };
 
-  // Format date
+  // Format date with validation
   const formatDate = (dateString) => {
-    return format(new Date(dateString), 'MMM dd, yyyy');
+    if (!dateString) return 'Unknown date';
+    
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return format(date, 'MMM dd, yyyy');
+    } catch (error) {
+      console.error('Date formatting error:', error, 'for date:', dateString);
+      return 'Invalid date';
+    }
   };
 
   // Get status details
   const getStatusDetails = (status) => {
     switch (status) {
+      case 'new':
+        return {
+          color: 'text-blue-700',
+          bgColor: 'bg-blue-100',
+          borderColor: 'border-blue-200',
+          icon: Clock,
+          label: 'New Inquiry'
+        };
       case 'pending':
         return {
           color: 'text-warning-700',
@@ -187,7 +234,7 @@ const InquiryList = ({ onInquiryClick }) => {
           bgColor: 'bg-secondary-100',
           borderColor: 'border-secondary-200',
           icon: AlertCircle,
-          label: status
+          label: status || 'Unknown'
         };
     }
   };
@@ -377,10 +424,10 @@ const InquiryList = ({ onInquiryClick }) => {
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h3 className="font-semibold text-secondary-900 mb-1">
-                              {inquiry.productName}
+                              {inquiry.investment_slug ? inquiry.investment_slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Investment Product'}
                             </h3>
                             <p className="text-sm text-secondary-600">
-                              Created on {formatDate(inquiry.createdAt)}
+                              Created on {formatDate(inquiry.created_at || inquiry.createdAt)}
                             </p>
                           </div>
                           
@@ -391,11 +438,30 @@ const InquiryList = ({ onInquiryClick }) => {
                         </div>
 
                         <div className="flex items-center gap-6 text-sm">
-                          <div>
-                            <span className="text-secondary-500">Amount: </span>
-                            <span className="font-semibold text-secondary-900">
-                              {formatCurrency(inquiry.amount)}
-                            </span>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-secondary-500">Amount: </span>
+                              <span className="font-semibold text-secondary-900">
+                                {formatCurrency(inquiry.investment_amount)}
+                              </span>
+                              <span className="text-secondary-500">({inquiry.currency || 'USD'})</span>
+                            </div>
+                            {inquiry.total_expected_return && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-secondary-500">Expected Return: </span>
+                                <span className="font-semibold text-success-600">
+                                  {formatCurrency(inquiry.total_expected_return)}
+                                </span>
+                              </div>
+                            )}
+                            {inquiry.duration_months && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-secondary-500">Duration: </span>
+                                <span className="text-secondary-700">
+                                  {inquiry.duration_months} months
+                                </span>
+                              </div>
+                            )}
                           </div>
                           
                           {inquiry.paymentReference && (

@@ -128,10 +128,6 @@ axiosInstance.interceptors.request.use(
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`)
-      console.log('Authorization header set:', `Bearer ${token.substring(0, 20)}...`)
-    } else {
-      console.log(`Making ${config.method?.toUpperCase()} request to ${config.url} without auth token`)
     }
     
     return config

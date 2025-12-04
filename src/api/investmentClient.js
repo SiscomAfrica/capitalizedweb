@@ -77,39 +77,19 @@ class InvestmentClient {
   }
 
   /**
-   * Create investment inquiry (requires authentication)
+   * Create investment inquiry using the submit endpoint (no authentication required)
    * @param {Object} inquiryData - Inquiry data
    * @param {string} inquiryData.productId - Product ID
    * @param {number} inquiryData.amount - Investment amount
+   * @param {string} inquiryData.email - User email
+   * @param {string} inquiryData.fullName - User full name
+   * @param {string} inquiryData.phone - User phone number
    * @returns {Promise<Object>} Created inquiry
    */
   async createInquiry(inquiryData) {
     try {
       console.log('Creating inquiry with data:', inquiryData)
-      console.log('Inquiry endpoint:', `${this.baseURL}/inquiries/`)
-      
-      // Check if user is authenticated
-      const token = localStorage.getItem('africa_access_token')
-      console.log('Access token available:', !!token)
-      console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token')
-      
-      // Decode token to see user ID (for debugging)
-      if (token) {
-        try {
-          const tokenParts = token.split('.')
-          if (tokenParts.length === 3) {
-            const payload = JSON.parse(atob(tokenParts[1]))
-            console.log('Token payload:', {
-              sub: payload.sub,
-              email: payload.email,
-              exp: new Date(payload.exp * 1000).toISOString(),
-              iat: new Date(payload.iat * 1000).toISOString()
-            })
-          }
-        } catch (decodeError) {
-          console.error('Failed to decode token:', decodeError)
-        }
-      }
+      console.log('Inquiry endpoint:', `${this.baseURL}/inquiries/submit`)
       
       const requestData = {
         product_id: inquiryData.productId,
@@ -117,14 +97,25 @@ class InvestmentClient {
         currency: inquiryData.currency || 'USD',
         duration_months: inquiryData.durationMonths || 0,
         message: inquiryData.message || '',
-        phone: inquiryData.phone || '',
+        email: inquiryData.email,
+        full_name: inquiryData.fullName,
+        phone: inquiryData.phone,
       }
       
       console.log('Request payload:', requestData)
       
-      const response = await axiosInstance.post(`${this.baseURL}/inquiries/`, requestData)
+      // Always use the submit endpoint (no authentication required)
+      const response = await axiosInstance.post(`${this.baseURL}/inquiries/submit`, requestData)
       
       console.log('Inquiry created successfully:', response.data)
+      
+      // Store inquiry ID in localStorage for session tracking
+      if (response.data.inquiry?.id) {
+        const existingInquiries = JSON.parse(localStorage.getItem('user_inquiries') || '[]')
+        existingInquiries.push(response.data.inquiry.id)
+        localStorage.setItem('user_inquiries', JSON.stringify(existingInquiries))
+      }
+      
       return response.data
     } catch (error) {
       console.error('Error creating inquiry:', error)
@@ -150,8 +141,10 @@ class InvestmentClient {
   }
 
   /**
-   * Get user's investment inquiries (requires authentication)
+   * Get user's investment inquiries (filters by email or phone)
    * @param {Object} filters - Optional filters
+   * @param {string} filters.email - User email to filter by
+   * @param {string} filters.phone - User phone to filter by
    * @param {string} filters.status - Inquiry status (pending, paid, cancelled)
    * @param {string} filters.sortBy - Sort field
    * @param {string} filters.sortOrder - Sort order (asc, desc)
@@ -161,18 +154,33 @@ class InvestmentClient {
     try {
       const params = new URLSearchParams()
       
-      if (filters.status) params.append('status', filters.status)
-      if (filters.sortBy) params.append('sort_by', filters.sortBy)
-      if (filters.sortOrder) params.append('sort_order', filters.sortOrder)
-      if (filters.limit) params.append('limit', filters.limit)
-      if (filters.offset) params.append('offset', filters.offset)
+      // Add email or phone filter (required by backend)
+      if (filters.email) {
+        params.append('email', filters.email)
+      } else if (filters.phone) {
+        params.append('phone', filters.phone)
+      } else {
+        // If no email/phone provided, return empty array
+        console.log('No email or phone provided for inquiry filtering')
+        return []
+      }
+      
+      // Note: Backend only supports email/phone filtering
+      // Status filtering and sorting will be done client-side
 
       const queryString = params.toString()
-      const url = queryString ? `${this.baseURL}/inquiries/?${queryString}` : `${this.baseURL}/inquiries/`
+      const url = `${this.baseURL}/inquiries/?${queryString}`
+      
+      console.log('Fetching inquiries with URL:', url)
       
       const response = await axiosInstance.get(url)
-      return response.data
+      const inquiries = response.data || []
+      
+      console.log(`Found ${inquiries.length} inquiries`)
+      
+      return inquiries
     } catch (error) {
+      console.error('Error fetching inquiries:', error)
       throw error
     }
   }

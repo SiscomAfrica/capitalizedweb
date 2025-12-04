@@ -87,47 +87,6 @@ const InquiriesPage = () => {
             </Button>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-secondary-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-secondary-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-secondary-500">Total Inquiries</p>
-                  <p className="text-xl font-semibold text-secondary-900">-</p>
-                  <p className="text-xs text-secondary-600">All time</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-warning-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-warning-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-secondary-500">Pending Payment</p>
-                  <p className="text-xl font-semibold text-warning-600">-</p>
-                  <p className="text-xs text-secondary-600">Awaiting payment</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-success-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-success-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-secondary-500">Completed</p>
-                  <p className="text-xl font-semibold text-success-600">-</p>
-                  <p className="text-xs text-secondary-600">Successfully paid</p>
-                </div>
-              </div>
-            </Card>
-          </div>
 
           {/* Inquiries List */}
           <InquiryList onInquiryClick={handleInquiryClick} />

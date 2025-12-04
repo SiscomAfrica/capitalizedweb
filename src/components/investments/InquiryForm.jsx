@@ -100,8 +100,23 @@ const InquiryForm = ({ product, onSuccess, onCancel }) => {
         tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token'
       });
 
-      if (!isAuthenticated || !token) {
-        setError('You must be logged in to create an investment inquiry. Please refresh the page and try again.');
+      // Always require contact information since we're using the submit endpoint
+      const email = data.email || user?.email;
+      const fullName = data.fullName || user?.full_name || user?.name;
+      const phone = data.phone || user?.phone;
+      
+      if (!email) {
+        setError('Email address is required to create an investment inquiry.');
+        return;
+      }
+      
+      if (!fullName) {
+        setError('Full name is required to create an investment inquiry.');
+        return;
+      }
+      
+      if (!phone) {
+        setError('Phone number is required to create an investment inquiry.');
         return;
       }
 
@@ -111,7 +126,10 @@ const InquiryForm = ({ product, onSuccess, onCancel }) => {
         currency: 'USD',
         durationMonths: productData.duration || 0,
         message: data.message || '',
-        phone: data.phone || '',
+        phone: data.phone || user?.phone || '',
+        email: data.email || user?.email || '',
+        fullName: data.fullName || user?.full_name || user?.name || '',
+        isAuthenticated: isAuthenticated,
       };
 
       const response = await investmentClient.createInquiry(inquiryData);
@@ -177,14 +195,14 @@ const InquiryForm = ({ product, onSuccess, onCancel }) => {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      {/* Authentication Debug Info (temporary) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card className="bg-blue-50 border-blue-200">
-          <h4 className="font-semibold text-blue-900 mb-2">Debug: Authentication Status</h4>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p>Authenticated: {isAuthenticated ? '✅ Yes' : '❌ No'}</p>
-            <p>User: {user ? `✅ ${user.email || user.id}` : '❌ No user'}</p>
-            <p>Token: {getAccessToken() ? '✅ Present' : '❌ Missing'}</p>
+      {/* User Info Display */}
+      {isAuthenticated && user && (
+        <Card className="bg-green-50 border-green-200">
+          <h4 className="font-semibold text-green-900 mb-2">Logged in as</h4>
+          <div className="text-sm text-green-800 space-y-1">
+            <p>Name: {user.full_name || user.name || 'Not provided'}</p>
+            <p>Email: {user.email}</p>
+            <p>Phone: {user.phone || 'Not provided'}</p>
           </div>
         </Card>
       )}
@@ -281,15 +299,71 @@ const InquiryForm = ({ product, onSuccess, onCancel }) => {
 
               {/* Additional Fields */}
               <div className="space-y-4">
-                {/* Phone Number */}
+                {/* Email Address (always required) */}
                 <div>
                   <label className="block text-sm font-medium text-secondary-700 mb-2">
-                    Phone Number (Optional)
+                    Email Address *
                   </label>
                   <input
-                    {...register('phone', phoneValidation)}
+                    {...register('email', {
+                      required: 'Email address is required',
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: 'Please enter a valid email address'
+                      }
+                    })}
+                    type="email"
+                    placeholder="Enter your email address"
+                    defaultValue={user?.email || ''}
+                    className="w-full px-3 py-3 border border-secondary-300 rounded-lg text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-error-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Full Name (always required) */}
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    {...register('fullName', {
+                      required: 'Full name is required',
+                      minLength: {
+                        value: 2,
+                        message: 'Name must be at least 2 characters'
+                      }
+                    })}
+                    type="text"
+                    placeholder="Enter your full name"
+                    defaultValue={user?.full_name || user?.name || ''}
+                    className="w-full px-3 py-3 border border-secondary-300 rounded-lg text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  {errors.fullName && (
+                    <p className="text-sm text-error-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {errors.fullName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone Number (always required) */}
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    {...register('phone', {
+                      required: 'Phone number is required',
+                      ...phoneValidation
+                    })}
                     type="tel"
                     placeholder="Enter your phone number"
+                    defaultValue={user?.phone || ''}
                     className="w-full px-3 py-3 border border-secondary-300 rounded-lg text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                   {errors.phone && (
