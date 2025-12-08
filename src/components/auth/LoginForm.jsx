@@ -272,21 +272,7 @@ const LoginForm = ({ onSuccess }) => {
           {loading ? 'Signing In...' : 'Sign In'}
         </Button>
 
-        <div className="text-center">
-          <p className="text-sm text-secondary-600">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
-              onClick={() => {
-                // This will be handled by the parent component for navigation
-                console.log('Navigate to register');
-              }}
-            >
-              Sign up here
-            </button>
-          </p>
-        </div>
+      
       </form>
     </div>
   );
