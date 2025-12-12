@@ -127,7 +127,7 @@ const ProfileCompletionForm = ({ onSuccess, onSkip, loading: externalLoading, sh
     try {
       // Prepare data for API (convert date to ISO string)
       const updateData = {
-        dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
+        date_of_birth: new Date(formData.dateOfBirth).toISOString(),
         country: formData.country.trim(),
         city: formData.city.trim(),
         address: formData.address.trim()
@@ -136,15 +136,32 @@ const ProfileCompletionForm = ({ onSuccess, onSkip, loading: externalLoading, sh
       // Call API to update profile
       const updatedProfile = await authClient.updateProfile(updateData);
 
-      // Update user context
-      updateUser(updatedProfile);
+      console.log('Profile update response:', updatedProfile);
+
+      // Check if backend marked profile as completed
+      const backendProfileCompleted = updatedProfile.profile_completed || updatedProfile.profileCompleted;
+      
+      // Update user context - trust backend status if available, otherwise assume completed
+      const profileStatus = backendProfileCompleted !== undefined ? backendProfileCompleted : true;
+      
+      updateUser({
+        ...updatedProfile,
+        profile_completed: profileStatus,
+        profileCompleted: profileStatus
+      });
 
       // Show success message
       setSuccess(true);
 
+      console.log('Profile completed successfully!', 'Backend status:', backendProfileCompleted, 'Final status:', profileStatus);
+
       // Call success callback after a short delay
       setTimeout(() => {
-        onSuccess?.(updatedProfile);
+        onSuccess?.({
+          ...updatedProfile,
+          profile_completed: profileStatus,
+          profileCompleted: profileStatus
+        });
       }, 1500);
 
     } catch (err) {
@@ -160,6 +177,13 @@ const ProfileCompletionForm = ({ onSuccess, onSkip, loading: externalLoading, sh
         setError('Your session has expired. Please log in again.');
       } else if (err.response?.status === 403) {
         setError('You do not have permission to update this profile.');
+      } else if (err.response?.status >= 200 && err.response?.status < 300) {
+        // This is actually a success response, don't show error
+        console.log('Profile update successful despite error catch');
+        setSuccess(true);
+        setTimeout(() => {
+          onSuccess?.(err.response?.data);
+        }, 1500);
       } else {
         setError(err.message || 'Failed to update profile. Please try again.');
       }

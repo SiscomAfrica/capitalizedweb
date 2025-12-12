@@ -16,15 +16,15 @@ const VerifyPhonePage = () => {
   const from = location.state?.from || '/dashboard';
   const message = location.state?.message;
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated AND no phone number from registration
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !phone) {
       navigate('/login', { 
         state: { from: location.pathname },
         replace: true 
       });
     }
-  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, navigate, location.pathname, phone]);
 
   // Redirect if already phone verified
   useEffect(() => {
@@ -61,8 +61,8 @@ const VerifyPhonePage = () => {
     );
   }
 
-  // Show error if no phone number available
-  if (!phone) {
+  // Show error if no phone number available and not authenticated
+  if (!phone && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary-50">
         <div className="max-w-md mx-auto text-center p-6 bg-white rounded-lg shadow-md">

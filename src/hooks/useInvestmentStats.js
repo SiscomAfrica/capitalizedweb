@@ -20,10 +20,8 @@ const useInvestmentStats = () => {
 
   // Calculate statistics from products data
   const calculateStatsFromProducts = (products) => {
-    console.log('Calculating statistics from products:', products);
-    
+   
     if (!products || products.length === 0) {
-      console.log('No products found, returning zero stats');
       return {
         averageReturn: 0,
         minInvestment: 0,
@@ -35,8 +33,7 @@ const useInvestmentStats = () => {
     }
 
     const activeProducts = products.filter(product => product.status === 'active');
-    console.log(`Found ${activeProducts.length} active products out of ${products.length} total`);
-    
+   
     // Calculate average return from all products (not just active)
     const productsWithReturns = products.filter(product => {
       const returnRate = parseFloat(product.expected_annual_return);
@@ -72,7 +69,6 @@ const useInvestmentStats = () => {
       activeProducts: activeProducts.length
     };
 
-    console.log('Calculated statistics result:', stats);
     return stats;
   };
 
@@ -84,29 +80,24 @@ const useInvestmentStats = () => {
 
       // Try to fetch dedicated statistics endpoint first
       try {
-        console.log('Attempting to fetch statistics from dedicated endpoint...');
         const statsResponse = await investmentClient.getStatistics();
-        console.log('Statistics fetched successfully:', statsResponse);
         setStats(statsResponse);
         return;
       } catch (statsError) {
         // Statistics endpoint not available (404 or other error), fall back to product calculation
-        console.log('Statistics endpoint not available (this is expected), calculating from products data...');
-        console.log('Statistics error details:', statsError.message);
+        console.error('Statistics error details:', statsError.message);
       }
 
       // Fallback: fetch products and calculate statistics
-      console.log('Fetching products to calculate statistics...');
       const productsResponse = await investmentClient.getProducts({
         page: 1,
         pageSize: 100 // Get more products for better statistics
       });
 
       const products = productsResponse.products || [];
-      console.log(`Found ${products.length} products for statistics calculation`);
-      
+   
       const calculatedStats = calculateStatsFromProducts(products);
-      console.log('Calculated statistics:', calculatedStats);
+      
       setStats(calculatedStats);
 
     } catch (err) {

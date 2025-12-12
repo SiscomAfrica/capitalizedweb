@@ -49,10 +49,7 @@ const ProductGrid = ({ onProductClick, initialFilters = {} }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Fetch products from investment service
-      console.log('Fetching from URL:', import.meta.env.VITE_INVESTMENT_SERVICE_URL);
-      
+    
       // Use direct fetch to bypass axios issues
       const params = new URLSearchParams();
       params.append('status', 'active');

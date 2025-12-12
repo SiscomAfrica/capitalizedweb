@@ -31,11 +31,7 @@ const InquiriesPage = () => {
   }, [location.state, navigate, location.pathname]);
 
   // Handle inquiry click
-  const handleInquiryClick = (inquiry) => {
-    // Navigate to inquiry detail or show modal
-    console.log('Inquiry clicked:', inquiry);
-    // You could implement a detailed inquiry view here
-  };
+
 
   // Handle create new inquiry
   const handleCreateInquiry = () => {

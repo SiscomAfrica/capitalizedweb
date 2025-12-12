@@ -15,7 +15,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
  * Implements the new flow: Register → Phone Verification → Profile Completion → Free Trial → Dashboard Access
  */
 const StreamlinedOnboarding = () => {
-  const { user, refreshUser, isPhoneVerified } = useAuth();
+  const { user, updateUser, isPhoneVerified } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -69,8 +69,8 @@ const StreamlinedOnboarding = () => {
       setLoading(true);
       setError(null);
 
-      // Refresh user data to get updated profile status
-      await refreshUser();
+      // Update user data to reflect profile completion
+      updateUser({ profile_completed: true, profileCompleted: true });
       
       setProfileCompleted(true);
       setCurrentStep(2);
@@ -96,19 +96,24 @@ const StreamlinedOnboarding = () => {
 
       const response = await subscriptionClient.startFreeTrial();
       
-      if (response.success) {
+      console.log('Free trial response:', response);
+      
+      if (response && (response.success || response.status === 'success' || response.message)) {
         setFreeTrialActivated(true);
         setCurrentStep(3);
         
-        // Refresh user data
-        await refreshUser();
+        // Update user data to reflect trial activation
+        updateUser({ 
+          subscription_status: 'trial',
+          has_active_subscription: true 
+        });
         
         // Auto-redirect to dashboard after showing success
         setTimeout(() => {
           navigate('/dashboard');
         }, 3000);
       } else {
-        throw new Error(response.message || 'Failed to activate free trial');
+        throw new Error(response?.message || 'Failed to activate free trial');
       }
       
     } catch (err) {
@@ -125,8 +130,35 @@ const StreamlinedOnboarding = () => {
       } else if (err.response?.status === 403) {
         setError('Please complete your profile first to activate the free trial.');
         setCurrentStep(1);
+      } else if (err.response?.status === 401) {
+        setError('Please log in again to activate your free trial.');
+      } else if (err.response?.status === 404) {
+        setError('Free trial service is currently unavailable. You can still access the dashboard.');
+        // Allow user to proceed to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+      } else if (err.response?.status === 422) {
+        setError('Your account is not eligible for a free trial at this time.');
+      } else if (err.response?.status >= 500) {
+        setError('Our servers are experiencing issues. You can still access the dashboard while we fix this.');
+        // Allow user to proceed to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
       } else {
-        setError(err.response?.data?.detail || 'Failed to activate free trial. Please try again.');
+        const errorMessage = err.response?.data?.detail || 
+                           err.response?.data?.message || 
+                           err.message || 
+                           'Failed to activate free trial. Please try again.';
+        setError(`${errorMessage} You can still access the dashboard.`);
+        
+        // Provide option to skip to dashboard after 5 seconds
+        setTimeout(() => {
+          if (currentStep === 2) { // Still on trial step
+            navigate('/dashboard');
+          }
+        }, 5000);
       }
     } finally {
       setLoading(false);
@@ -332,12 +364,25 @@ const StreamlinedOnboarding = () => {
                         Activate Free Trial
                       </Button>
                       
-                      <button
-                        onClick={handleSkipToDashboard}
-                        className="text-gray-500 hover:text-gray-700 text-sm underline"
-                      >
-                        Skip and explore with basic access
-                      </button>
+                      <div className="flex flex-col space-y-2">
+                        <button
+                          onClick={handleSkipToDashboard}
+                          className="text-gray-500 hover:text-gray-700 text-sm underline"
+                        >
+                          Skip and explore with basic access
+                        </button>
+                        
+                        {error && (
+                          <Button
+                            onClick={handleSkipToDashboard}
+                            variant="secondary"
+                            size="sm"
+                            className="mt-2"
+                          >
+                            Continue to Dashboard
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </Card>

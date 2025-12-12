@@ -11,8 +11,9 @@ const RegisterPage = () => {
   const { isAuthenticated, isLoading, isPhoneVerified } = useAuth();
   const [pageLoading, setPageLoading] = useState(false);
 
-  // Get the intended destination from location state
+  // Get the intended destination and initial data from location state
   const from = location.state?.from || '/dashboard';
+  const initialData = location.state?.initialData || {};
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -88,7 +89,31 @@ const RegisterPage = () => {
           transition={{ delay: 0.2, duration: 0.3 }}
           className="bg-white rounded-lg shadow-lg p-8"
         >
-          <RegisterForm onSuccess={handleRegistrationSuccess} />
+          {/* Show helpful message if coming from login attempt */}
+          {(initialData.email || initialData.phone) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg"
+            >
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-primary-800 font-medium">
+                    No account found
+                  </p>
+                  <p className="text-sm text-primary-700 mt-1">
+                    We've pre-filled your {initialData.email ? 'email' : 'phone number'} below. Complete the form to create your account.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          <RegisterForm onSuccess={handleRegistrationSuccess} initialData={initialData} />
           
           {/* Additional Links */}
           <div className="mt-6 pt-6 border-t border-secondary-200">

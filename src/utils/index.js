@@ -54,3 +54,23 @@ export * from './responsive.js'
 
 // Image optimization utilities
 export * from './imageOptimization.js'
+
+// Error handling utilities
+export {
+  isUserNotFoundError,
+  getAuthErrorMessage,
+  extractValidationErrors,
+} from './errorHelpers.js'
+
+// Country data utilities
+export {
+  PHONE_COUNTRY_CODES,
+  parseCountryData,
+  getCountriesWithPhoneCodes,
+  getPhoneCodeForCountry,
+  formatPhoneWithCountryCode,
+  validatePhoneNumberForCountry,
+  detectCountryFromPhone,
+  DEFAULT_COUNTRY,
+  POPULAR_COUNTRIES,
+} from './countryData.js'

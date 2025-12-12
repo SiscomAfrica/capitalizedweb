@@ -42,25 +42,47 @@ class AuthClient {
    * @returns {Promise<Object>} Login response with tokens
    */
   async login(identifier, password) {
+  
+
     try {
-      const response = await axiosInstance.post(`${this.baseURL}/login`, {
+      const requestData = {
         identifier,
         password,
-      })
+      };
+
+     
+      const response = await axiosInstance.post(`${this.baseURL}/login`, requestData);
+
+  
 
       const { access_token, refresh_token, user } = response.data
+
+   
 
       // Store tokens
       if (access_token && refresh_token) {
         setTokens(access_token, refresh_token)
+      } else {
+        console.warn('⚠️ Missing tokens in response');
       }
 
-      return {
+      const result = {
         accessToken: access_token,
         refreshToken: refresh_token,
         user,
-      }
+      };
+
+      return result;
     } catch (error) {
+      console.error('❌ AuthClient login error:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.response?.data,
+        stack: error.stack
+      });
       throw error
     }
   }

@@ -4,11 +4,14 @@ import { motion } from 'framer-motion';
 import LoginForm from '../../components/auth/LoginForm';
 import useAuth from '../../hooks/useAuth';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useAuthContext } from '../../contexts/AuthContext';
+
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading, isPhoneVerified } = useAuth();
+  const { updateUser } = useAuthContext();
   const [pageLoading, setPageLoading] = useState(false);
 
   // Get the intended destination from location state
@@ -17,6 +20,8 @@ const LoginPage = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
+     
+      
       if (isPhoneVerified()) {
         navigate(from, { replace: true });
       } else {
@@ -25,8 +30,18 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, isLoading, isPhoneVerified, navigate, from]);
 
-  const handleLoginSuccess = (response) => {
+  const handleLoginSuccess = async (response) => {
+    
+    
     setPageLoading(true);
+    
+    // Update AuthContext immediately with new user data
+    if (response.user) {
+      updateUser(response.user);
+    }
+    
+    // Small delay to ensure AuthContext is updated
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Check if phone verification is needed
     if (response.user && !response.user.phone_verified) {
@@ -139,6 +154,7 @@ const LoginPage = () => {
           </p>
         </motion.div>
       </motion.div>
+
     </div>
   );
 };

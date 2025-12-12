@@ -13,11 +13,24 @@ const PhoneVerification = ({ phone, onSuccess }) => {
   const [resendTimer, setResendTimer] = useState(0);
   const [initialOtpSent, setInitialOtpSent] = useState(false);
   const inputRefs = useRef([]);
+  const sendingOtpRef = useRef(false);
 
   // Send initial OTP when component mounts
   useEffect(() => {
     const sendInitialOtp = async () => {
-      if (!phone || initialOtpSent) return;
+      if (!phone || initialOtpSent || sendingOtpRef.current) return;
+      
+      // Mark as sending to prevent concurrent requests
+      sendingOtpRef.current = true;
+      
+      // Add a small delay to prevent rapid successive calls
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Double-check that we still need to send (in case of rapid re-renders)
+      if (initialOtpSent) {
+        sendingOtpRef.current = false;
+        return;
+      }
       
       setResendLoading(true);
       try {
@@ -40,16 +53,26 @@ const PhoneVerification = ({ phone, onSuccess }) => {
         
       } catch (error) {
         console.error('Initial OTP send error:', error);
-        setErrors({ 
-          general: 'Failed to send verification code. Please try resending.' 
-        });
+        
+        if (error.response?.status === 429) {
+          setErrors({ 
+            general: 'Rate limit reached. Please wait a moment before requesting another code.' 
+          });
+          setResendTimer(120);
+          setInitialOtpSent(true); // Mark as sent even if rate limited to prevent retries
+        } else {
+          setErrors({ 
+            general: 'Failed to send verification code. Please try resending.' 
+          });
+        }
       } finally {
         setResendLoading(false);
+        sendingOtpRef.current = false;
       }
     };
 
     sendInitialOtp();
-  }, [phone, initialOtpSent]);
+  }, [phone]); // Remove initialOtpSent from dependencies to prevent re-runs
 
   // Countdown timer effect
   useEffect(() => {
@@ -169,8 +192,10 @@ const PhoneVerification = ({ phone, onSuccess }) => {
   };
 
   const handleResendOtp = async () => {
-    if (resendTimer > 0 || !phone) return;
+    if (resendTimer > 0 || !phone || sendingOtpRef.current) return;
 
+    // Mark as sending to prevent concurrent requests
+    sendingOtpRef.current = true;
     setResendLoading(true);
     setErrors({});
 
@@ -200,7 +225,13 @@ const PhoneVerification = ({ phone, onSuccess }) => {
     } catch (error) {
       console.error('Resend OTP error:', error);
       
-      if (error.response?.data?.detail) {
+      if (error.response?.status === 429) {
+        setErrors({ 
+          general: 'Too many requests. Please wait a moment before requesting another code.' 
+        });
+        // Set a longer timer for rate limited requests
+        setResendTimer(120);
+      } else if (error.response?.data?.detail) {
         setErrors({ 
           general: error.response.data.detail 
         });
@@ -215,6 +246,7 @@ const PhoneVerification = ({ phone, onSuccess }) => {
       }
     } finally {
       setResendLoading(false);
+      sendingOtpRef.current = false;
     }
   };
 

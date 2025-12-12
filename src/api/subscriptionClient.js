@@ -210,9 +210,20 @@ class SubscriptionClient {
    */
   async startFreeTrial() {
     try {
-      const response = await axiosInstance.post(`${this.baseURL}/start-trial`)
+      const response = await axiosInstance.post(`${this.baseURL}/start-trial`, {}, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
       return response.data
     } catch (error) {
+      console.error('Start trial API error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
       throw error
     }
   }

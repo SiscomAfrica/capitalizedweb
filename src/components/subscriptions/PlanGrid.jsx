@@ -26,12 +26,9 @@ const PlanGrid = ({ onPlanSelect, className = '' }) => {
       }
       setError(null)
 
-      console.log('Fetching subscription plans...')
-      
       try {
         const response = await subscriptionClient.getPlans({ activeOnly: true })
-        console.log('Plans API response:', response)
-        
+       
         // Handle different response structures from backend
         let plansData = [];
         if (Array.isArray(response)) {
@@ -44,17 +41,15 @@ const PlanGrid = ({ onPlanSelect, className = '' }) => {
           plansData = response.results;
         }
         
-        console.log('Processed plans data:', plansData)
         
         // For now, we focus on free trial model - no subscription plans needed
         if (!plansData || plansData.length === 0) {
-          console.log('No subscription plans - focusing on free trial model')
           setPlans([]) // Empty plans array - users should use free trial
         } else {
           setPlans(plansData)
         }
       } catch (apiError) {
-        console.log('API error - focusing on free trial model:', apiError)
+        console.error('API error - focusing on free trial model:', apiError)
         // No fallback plans - focus on free trial
         setPlans([])
       }

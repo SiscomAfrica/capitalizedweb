@@ -320,11 +320,15 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = useCallback(async (identifier, password) => {
+    
+
     dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true })
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR })
 
     try {
       const response = await authClient.login(identifier, password)
+      
+  
       
       // Store user data
       if (response.user) {
@@ -340,14 +344,24 @@ export const AuthProvider = ({ children }) => {
         },
       })
 
-      return {
+      const successResponse = {
         success: true,
         message: SUCCESS_MESSAGES.LOGIN,
         user: response.user,
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
-      }
+      };
+
+      return successResponse;
     } catch (error) {
+      console.error('❌ AuthContext login error:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
+
       dispatch({
         type: AUTH_ACTIONS.SET_ERROR,
         payload: error.message || 'Login failed',
@@ -455,9 +469,12 @@ export const AuthProvider = ({ children }) => {
       
       dispatch({ type: AUTH_ACTIONS.LOGOUT })
       
-      // Redirect to login page
-      if (typeof window !== 'undefined') {
+      // Only redirect if we're not currently on the login page
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+       
         window.location.href = '/login'
+      } else {
+        console.error('⏸️ Skipping redirect - already on login page');
       }
     }
   }, [])

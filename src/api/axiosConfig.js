@@ -179,7 +179,12 @@ axiosInstance.interceptors.response.use(
     const { status } = error.response
 
     // Handle 401 errors (token expired/invalid)
-    if (status === 401 && !originalRequest._retry) {
+    // Skip token refresh for login/register endpoints
+    const isAuthEndpoint = originalRequest.url?.includes('/login') || 
+                          originalRequest.url?.includes('/register') ||
+                          originalRequest.url?.includes('/refresh');
+    
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -208,9 +213,13 @@ axiosInstance.interceptors.response.use(
         // Clear tokens and redirect to login
         clearTokens()
         
-        // Redirect to login page
-        if (typeof window !== 'undefined') {
+        // Only redirect if we're not currently on the login page or in the middle of login
+        if (typeof window !== 'undefined' && 
+            !window.location.pathname.includes('/login') && 
+            !window.loginInProgress) {
           window.location.href = '/login'
+        } else {
+          console.error('⏸️ Skipping redirect - already on login page or login in progress');
         }
         
         return Promise.reject({
@@ -232,6 +241,11 @@ axiosInstance.interceptors.response.use(
       case 400:
         errorMessage = error.response.data?.message || ERROR_MESSAGES.VALIDATION
         errorType = 'validation'
+        break
+      case 401:
+        // For auth endpoints, preserve the original error message from API
+        errorMessage = error.response.data?.detail || error.response.data?.message || 'Authentication failed'
+        errorType = 'unauthorized'
         break
       case 403:
         errorMessage = ERROR_MESSAGES.FORBIDDEN

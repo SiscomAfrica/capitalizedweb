@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Button from '../common/Button';
 import Input from '../common/Input';
-import PhoneInput from '../common/PhoneInput';
+import PhoneInputWithCountry from '../common/PhoneInputWithCountry';
 import authClient from '../../api/authClient';
 import { validateEmail, validatePhoneNumber, validatePassword, validateName } from '../../utils/validators';
-import { formatPhoneNumber } from '../../utils/formatters';
+import { extractValidationErrors } from '../../utils/errorHelpers';
 
-const RegisterForm = ({ onSuccess }) => {
+const RegisterForm = ({ onSuccess, initialData = {} }) => {
   const [formData, setFormData] = useState({
-    email: '',
-    phone: '',
+    email: initialData.email || '',
+    phone: initialData.phone || '',
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -86,11 +86,18 @@ const RegisterForm = ({ onSuccess }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
+    // Prevent default form submission and page refresh
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Don't submit if already loading
+    if (loading) {
+      return false;
+    }
     
     if (!validateForm()) {
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -99,7 +106,7 @@ const RegisterForm = ({ onSuccess }) => {
     try {
       const userData = {
         email: formData.email,
-        phone: formatPhoneNumber(formData.phone, 'api'), // Format phone for API
+        phone: formData.phone, // Phone is already formatted with country code
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName
@@ -107,50 +114,26 @@ const RegisterForm = ({ onSuccess }) => {
 
       const response = await authClient.register(userData);
       
-      // Call success callback with response data
+      // Call success callback with response data and ensure phone is included
       if (onSuccess) {
-        onSuccess(response);
+        onSuccess({
+          ...response,
+          phone: formData.phone, // Ensure phone is available for verification redirect
+          user: {
+            ...response.user,
+            phone: formData.phone // Also include in user object
+          }
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
       
       // Handle different error types
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 422) {
         const errorData = error.response.data;
+        const fieldErrors = extractValidationErrors(errorData);
         
-        // Handle field-specific errors
-        if (errorData.detail && Array.isArray(errorData.detail)) {
-          // Handle Pydantic validation errors format
-          const fieldErrors = {};
-          errorData.detail.forEach(error => {
-            if (error.loc && error.loc.length > 1) {
-              const field = error.loc[error.loc.length - 1]; // Get the field name
-              const fieldMap = {
-                'email': 'email',
-                'phone': 'phone',
-                'password': 'password',
-                'full_name': 'firstName', // Map full_name errors to firstName field
-              };
-              const frontendField = fieldMap[field] || field;
-              fieldErrors[frontendField] = error.msg || 'Invalid value';
-            }
-          });
-          setErrors(fieldErrors);
-        } else if (errorData.detail && typeof errorData.detail === 'object') {
-          const fieldErrors = {};
-          Object.keys(errorData.detail).forEach(field => {
-            // Map backend field names to frontend field names
-            const fieldMap = {
-              'email': 'email',
-              'phone': 'phone',
-              'password': 'password',
-              'full_name': 'firstName', // Map full_name errors to firstName field
-            };
-            const frontendField = fieldMap[field] || field;
-            fieldErrors[frontendField] = Array.isArray(errorData.detail[field]) 
-              ? errorData.detail[field][0] 
-              : errorData.detail[field];
-          });
+        if (Object.keys(fieldErrors).length > 0) {
           setErrors(fieldErrors);
         } else if (errorData.detail) {
           setErrors({ general: errorData.detail });
@@ -180,11 +163,13 @@ const RegisterForm = ({ onSuccess }) => {
     } finally {
       setLoading(false);
     }
-  };
+    
+    return false; // Prevent any further form submission
+  }, [formData, loading, onSuccess, validateForm]);
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-6">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-secondary-900 mb-2">
             Create Account
@@ -239,7 +224,7 @@ const RegisterForm = ({ onSuccess }) => {
             autoComplete="email"
           />
 
-          <PhoneInput
+          <PhoneInputWithCountry
             label="Phone Number"
             placeholder="Enter your phone number"
             value={formData.phone}
@@ -247,8 +232,7 @@ const RegisterForm = ({ onSuccess }) => {
             error={errors.phone}
             required
             disabled={loading}
-            showCountrySelector={false}
-            defaultCountry="KENYA"
+            defaultCountry="KE"
           />
 
           <Input
@@ -277,12 +261,13 @@ const RegisterForm = ({ onSuccess }) => {
         </div>
 
         <Button
-          type="submit"
+          type="button"
           variant="primary"
           size="lg"
           loading={loading}
           disabled={loading}
           className="w-full"
+          onClick={handleSubmit}
         >
           {loading ? 'Creating Account...' : 'Create Account'}
         </Button>

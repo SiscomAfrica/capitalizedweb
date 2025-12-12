@@ -53,7 +53,18 @@ export const getStorageItem = (key, defaultValue = null) => {
     const item = localStorage.getItem(key)
     if (item === null) return defaultValue
     
-    return JSON.parse(item)
+    // Handle JWT tokens (they are stored as plain strings)
+    if (key === 'africa_access_token' || key === 'africa_refresh_token') {
+      return item; // Return as plain string
+    }
+    
+    // Try to parse as JSON, fallback to plain string
+    try {
+      return JSON.parse(item)
+    } catch (parseError) {
+      // If JSON parsing fails, return as plain string
+      return item
+    }
   } catch (error) {
     console.warn(`Error reading from localStorage key "${key}":`, error)
     return defaultValue

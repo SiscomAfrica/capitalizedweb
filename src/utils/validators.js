@@ -53,8 +53,8 @@ export const validateEmail = (email) => {
 }
 
 /**
- * Validate phone number (Kenya format)
- * @param {string} phone - Phone number to validate
+ * Validate phone number (International format with country code)
+ * @param {string} phone - Phone number to validate (should include country code)
  * @returns {object} Validation result with isValid and message
  */
 export const validatePhoneNumber = (phone) => {
@@ -74,51 +74,87 @@ export const validatePhoneNumber = (phone) => {
     }
   }
 
-  // Remove all non-digit characters for validation
-  const digits = trimmedPhone.replace(/\D/g, '')
-
-  // Kenya phone number validation
-  // Valid formats:
-  // - 0712345678 (10 digits starting with 0)
-  // - 712345678 (9 digits)
-  // - +254712345678 (international format)
-  // - 254712345678 (international without +)
-
-  if (digits.length === 9) {
-    // 9 digits - should start with 7
-    if (!digits.startsWith('7')) {
-      return {
-        isValid: false,
-        message: 'Phone number should start with 7 (e.g., 712345678)',
-      }
-    }
-  } else if (digits.length === 10) {
-    // 10 digits - should start with 07
-    if (!digits.startsWith('07')) {
-      return {
-        isValid: false,
-        message: 'Phone number should start with 07 (e.g., 0712345678)',
-      }
-    }
-  } else if (digits.length === 12) {
-    // 12 digits - should start with 254
-    if (!digits.startsWith('254')) {
-      return {
-        isValid: false,
-        message: 'International format should start with 254',
-      }
-    }
-    // Check if the part after 254 starts with 7
-    if (!digits.substring(3).startsWith('7')) {
-      return {
-        isValid: false,
-        message: 'Invalid Kenya phone number format',
-      }
-    }
-  } else {
+  // Check if it starts with + (international format)
+  if (!trimmedPhone.startsWith('+')) {
     return {
       isValid: false,
-      message: 'Phone number should be 9, 10, or 12 digits long',
+      message: 'Phone number should include country code (e.g., +254712345678)',
+    }
+  }
+
+  // Remove + and any non-digit characters for validation
+  const digits = trimmedPhone.substring(1).replace(/\D/g, '')
+
+  // Basic international phone number validation
+  if (digits.length < 7 || digits.length > 15) {
+    return {
+      isValid: false,
+      message: 'Phone number should be between 7 and 15 digits',
+    }
+  }
+
+  // Enhanced validation for specific countries
+  // Kenya (+254)
+  if (digits.startsWith('254')) {
+    const kenyanPart = digits.substring(3) // Remove 254
+    
+    if (kenyanPart.length !== 9) {
+      return {
+        isValid: false,
+        message: 'Kenyan phone numbers should be 9 digits after +254',
+      }
+    }
+    
+    // Kenyan numbers should start with 7 or 1 (not 0)
+    if (!/^[71]\d{8}$/.test(kenyanPart)) {
+      return {
+        isValid: false,
+        message: 'Kenyan numbers should start with 7 or 1 (e.g., +254712345678)',
+      }
+    }
+  }
+  
+  // Uganda (+256)
+  else if (digits.startsWith('256')) {
+    const ugandanPart = digits.substring(3);
+    if (ugandanPart.length !== 9 || !/^[37]\d{8}$/.test(ugandanPart)) {
+      return {
+        isValid: false,
+        message: 'Ugandan numbers should start with 3 or 7 and be 9 digits',
+      }
+    }
+  }
+  
+  // Tanzania (+255)
+  else if (digits.startsWith('255')) {
+    const tanzanianPart = digits.substring(3);
+    if (tanzanianPart.length !== 9 || !/^[67]\d{8}$/.test(tanzanianPart)) {
+      return {
+        isValid: false,
+        message: 'Tanzanian numbers should start with 6 or 7 and be 9 digits',
+      }
+    }
+  }
+  
+  // Nigeria (+234)
+  else if (digits.startsWith('234')) {
+    const nigerianPart = digits.substring(3);
+    if (nigerianPart.length !== 10 || !/^[789]\d{9}$/.test(nigerianPart)) {
+      return {
+        isValid: false,
+        message: 'Nigerian numbers should start with 7, 8, or 9 and be 10 digits',
+      }
+    }
+  }
+  
+  // US/Canada (+1)
+  else if (digits.startsWith('1')) {
+    const northAmericanPart = digits.substring(1);
+    if (northAmericanPart.length !== 10 || !/^\d{10}$/.test(northAmericanPart)) {
+      return {
+        isValid: false,
+        message: 'US/Canadian numbers should be 10 digits after +1',
+      }
     }
   }
 

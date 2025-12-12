@@ -88,9 +88,7 @@ class InvestmentClient {
    */
   async createInquiry(inquiryData) {
     try {
-      console.log('Creating inquiry with data:', inquiryData)
-      console.log('Inquiry endpoint:', `${this.baseURL}/inquiries/submit`)
-      
+    
       const requestData = {
         product_id: inquiryData.productId,
         investment_amount: inquiryData.amount,
@@ -101,14 +99,11 @@ class InvestmentClient {
         full_name: inquiryData.fullName,
         phone: inquiryData.phone,
       }
-      
-      console.log('Request payload:', requestData)
-      
+ 
       // Always use the submit endpoint (no authentication required)
       const response = await axiosInstance.post(`${this.baseURL}/inquiries/submit`, requestData)
       
-      console.log('Inquiry created successfully:', response.data)
-      
+     
       // Store inquiry ID in localStorage for session tracking
       if (response.data.inquiry?.id) {
         const existingInquiries = JSON.parse(localStorage.getItem('user_inquiries') || '[]')
@@ -161,7 +156,6 @@ class InvestmentClient {
         params.append('phone', filters.phone)
       } else {
         // If no email/phone provided, return empty array
-        console.log('No email or phone provided for inquiry filtering')
         return []
       }
       
@@ -171,12 +165,8 @@ class InvestmentClient {
       const queryString = params.toString()
       const url = `${this.baseURL}/inquiries/?${queryString}`
       
-      console.log('Fetching inquiries with URL:', url)
-      
       const response = await axiosInstance.get(url)
       const inquiries = response.data || []
-      
-      console.log(`Found ${inquiries.length} inquiries`)
       
       return inquiries
     } catch (error) {

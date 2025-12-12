@@ -89,16 +89,7 @@ const InquiryForm = ({ product, onSuccess, onCancel }) => {
       const token = getAccessToken();
       const storedToken = localStorage.getItem('africa_access_token');
       
-      console.log('Authentication check:', {
-        isAuthenticated,
-        hasUser: !!user,
-        hasToken: !!token,
-        hasStoredToken: !!storedToken,
-        tokenMatch: token === storedToken,
-        userId: user?.id,
-        userEmail: user?.email,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token'
-      });
+     
 
       // Always require contact information since we're using the submit endpoint
       const email = data.email || user?.email;
